@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Revisão interativa — Medicina de Família e Comunidade</title>
+<style>
+  :root {
+    --bg: #0A0D12;
+    --surface: #121620;
+    --surface-2: #1A2029;
+    --surface-3: #212938;
+    --border: #262E3A;
+    --border-soft: #1D2430;
+    --text: #EDF1F5;
+    --text-muted: #8D97A5;
+    --text-faint: #5B6472;
+    --accent: #E7B948;
+    --accent-soft: rgba(231, 185, 72, 0.14);
+    --accent-ink: #1A1406;
+    --correct: #3DDC97;
+    --correct-bg: rgba(61, 220, 151, 0.12);
+    --correct-border: rgba(61, 220, 151, 0.45);
+    --incorrect: #F2647A;
+    --incorrect-bg: rgba(242, 100, 122, 0.12);
+    --incorrect-border: rgba(242, 100, 122, 0.45);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+  }
+
+  body {
+    font-family: var(--font-ui);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    min-height: 100%;
+  }
+
+  #app {
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  button {
+    font-family: inherit;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  a { color: var(--accent); }
+
+  /* ---------- shared layout bits ---------- */
+
+  .screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 22px calc(28px + var(--safe-bottom));
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 17px 24px;
+    font-size: 15.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.15s ease, background-color 0.15s ease;
+    min-height: 54px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    text-transform: uppercase;
+    width: 100%;
+  }
+  .btn-primary:not(:disabled):hover { background: #EFC562; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    width: 100%;
+  }
+  .btn-ghost:not(:disabled):hover { border-color: var(--text-faint); color: var(--text); }
+
+  .btn-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 13px;
+    padding: 8px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .link-btn:hover { color: var(--text-muted); }
+
+  /* ---------- start screen ---------- */
+
+  .start-screen {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 0;
+  }
+
+  .start-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+
+  .start-title {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    text-transform: uppercase;
+  }
+
+  .start-subtitle {
+    font-size: 16px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 36px;
+    max-width: 380px;
+  }
+
+  .start-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 36px;
+  }
+
+  .start-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px 10px;
+  }
+
+  .start-stat-num {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .start-stat-label {
+    font-size: 11.5px;
+    color: var(--text-faint);
+    margin-top: 4px;
+    line-height: 1.3;
+  }
+
+  .start-actions {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .resume-banner {
+    width: 100%;
+    max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    text-align: left;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  .resume-banner strong { color: var(--text); }
+
+  /* ---------- quiz header ---------- */
+
+  .quiz-header {
+    padding: 16px 22px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 5;
+  }
+
+  .quiz-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .quiz-counter {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+
+  .quiz-counter b { color: var(--text); font-weight: 600; }
+
+  .quiz-percent {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .exit-link {
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 4px 6px;
+  }
+  .exit-link:hover { color: var(--text-muted); }
+
+  /* ---------- question body ---------- */
+
+  .quiz-body {
+    padding: 22px 22px 110px;
+    flex: 1;
+  }
+
+  .tema-chip {
+    display: inline-block;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+  }
+
+  .enunciado {
+    font-size: 17px;
+    line-height: 1.62;
+    color: var(--text);
+    margin: 0 0 24px;
+    white-space: pre-line;
+  }
+
+  .alt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .alt-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    text-align: left;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 15px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+    width: 100%;
+  }
+  .alt-row:active:not(.locked) { transform: scale(0.985); }
+  .alt-row:not(.locked):hover { border-color: var(--text-faint); }
+
+  .alt-badge {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .alt-text {
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 500;
+    color: var(--text);
+    padding-top: 3px;
+  }
+
+  .alt-row.correct-row {
+    background: var(--correct-bg);
+    border-color: var(--correct-border);
+  }
+  .alt-row.correct-row .alt-badge {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: #06231A;
+  }
+
+  .alt-row.incorrect-row {
+    background: var(--incorrect-bg);
+    border-color: var(--incorrect-border);
+  }
+  .alt-row.incorrect-row .alt-badge {
+    background: var(--incorrect);
+    border-color: var(--incorrect);
+    color: #2B0810;
+  }
+
+  .alt-row.locked { cursor: default; }
+  .alt-row.locked.dim { opacity: 0.45; }
+
+  .alt-mark {
+    margin-left: auto;
+    font-size: 17px;
+    padding-left: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ---------- feedback + explanation ---------- */
+
+  .feedback-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-weight: 700;
+    margin: 20px 0 4px;
+    animation: feedback-in 0.28s ease;
+  }
+  .feedback-banner.is-correct {
+    background: var(--correct-bg);
+    color: var(--correct);
+    border: 1px solid var(--correct-border);
+  }
+  .feedback-banner.is-incorrect {
+    background: var(--incorrect-bg);
+    color: var(--incorrect);
+    border: 1px solid var(--incorrect-border);
+  }
+
+  @keyframes feedback-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .explain-panel {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 20px;
+    animation: panel-in 0.3s ease;
+  }
+
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .explain-block { margin-bottom: 20px; }
+  .explain-block:last-child { margin-bottom: 0; }
+
+  .explain-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+
+  .explain-text {
+    font-size: 15px;
+    line-height: 1.62;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .explain-gabarito {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--correct-bg);
+    border: 1px solid var(--correct-border);
+    color: var(--correct);
+    font-size: 14.5px;
+    font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 100px;
+  }
+
+  .wrong-alt-item {
+    padding: 12px 0;
+    border-top: 1px solid var(--border-soft);
+  }
+  .wrong-alt-item:first-child { border-top: none; padding-top: 4px; }
+
+  .wrong-alt-letter {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--incorrect);
+    margin-right: 6px;
+  }
+
+  /* ---------- bottom nav ---------- */
+
+  .quiz-nav {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    gap: 12px;
+    padding: 14px 22px calc(14px + var(--safe-bottom));
+    background: linear-gradient(180deg, rgba(10,13,18,0) 0%, var(--bg) 30%);
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .quiz-nav .btn { flex: 1; min-height: 50px; padding: 14px; }
+
+  /* ---------- result screen ---------- */
+
+  .result-screen { justify-content: flex-start; padding-top: 44px; }
+
+  .result-hero { text-align: center; margin-bottom: 30px; }
+
+  .result-percent {
+    font-family: var(--font-mono);
+    font-size: 72px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .result-band {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 10px;
+  }
+
+  .result-band-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  .result-track {
+    height: 8px;
+    border-radius: 5px;
+    background: var(--surface-2);
+    overflow: hidden;
+    margin: 26px 0 22px;
+  }
+  .result-track-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: var(--accent);
+    transition: width 0.6s cubic-bezier(0.22,1,0.36,1);
+  }
+
+  .result-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 30px;
+  }
+
+  .result-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    text-align: center;
+  }
+  .result-stat-card.acertos { border-color: var(--correct-border); background: var(--correct-bg); }
+  .result-stat-card.erros { border-color: var(--incorrect-border); background: var(--incorrect-bg); }
+
+  .result-stat-num {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .result-stat-card.acertos .result-stat-num { color: var(--correct); }
+  .result-stat-card.erros .result-stat-num { color: var(--incorrect); }
+
+  .result-stat-label {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .review-tema-note {
+    font-size: 13px;
+    color: var(--text-faint);
+    text-align: center;
+    margin-top: 22px;
+    line-height: 1.5;
+  }
+
+  .review-flag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    padding: 3px 9px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 380px) {
+    .start-title { font-size: 28px; }
+    .result-percent { font-size: 60px; }
+    .screen { padding-left: 18px; padding-right: 18px; }
+    .quiz-header { padding-left: 18px; padding-right: 18px; }
+    .quiz-body { padding-left: 18px; padding-right: 18px; }
+    .quiz-nav { padding-left: 18px; padding-right: 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  button:focus-visible, .alt-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+
+var QUESTIONS = [{"id": 1, "tema": "APS — Primeiro contato e porta de entrada", "enunciado": "Um homem de 34 anos procura pela primeira vez a UBS de seu bairro, sem vínculo prévio com a equipe, referindo dor abdominal há dois dias. Antes de decidir qualquer encaminhamento, a equipe realiza acolhimento, escuta a queixa e avalia a necessidade clínica ali mesmo, orientando os próximos passos.", "alternativas": {"A": "Primeiro contato (porta de entrada), pois a UBS acolhe a necessidade do usuário já no primeiro acesso ao sistema", "B": "Longitudinalidade, pois a equipe já conhece a história de vida do paciente", "C": "Coordenação do cuidado, pois a equipe está organizando o fluxo entre diferentes serviços", "D": "Territorialização, pois o paciente mora na área de abrangência da unidade"}, "correta": "A", "raciocinio": "O enunciado descreve um paciente sem vínculo prévio, buscando a unidade pela primeira vez. O elemento central a identificar é qual atributo da APS está sendo exercido nesse momento específico: o acolhimento e a avaliação da necessidade no primeiro acesso ao sistema, e não o histórico de acompanhamento (que exigiria vínculo já construído) nem a integração entre serviços (que pressupõe encaminhamento em curso).", "porque_correta": "Primeiro contato (também chamado de acesso ou porta de entrada) é o atributo que garante que a pessoa seja acolhida e tenha sua necessidade avaliada no momento em que busca o sistema de saúde, independentemente de vínculo prévio. É exatamente o que a UBS faz nesse caso.", "erros": {"B": "Incorreta porque longitudinalidade pressupõe uma relação continuada ao longo do tempo, com conhecimento acumulado da história da pessoa — o que não está presente aqui, já que o paciente não tem vínculo prévio com a equipe.", "C": "Incorreta porque coordenação do cuidado refere-se à integração de informações e ao acompanhamento do percurso do paciente entre diferentes pontos de atenção (por exemplo, entre a UBS e um especialista), algo que ainda não ocorreu nesse primeiro atendimento.", "D": "Incorreta porque territorialização diz respeito ao processo de conhecer e organizar o cuidado a partir das características do território, e não ao ato pontual de acolher um paciente que busca a unidade pela primeira vez."}}, {"id": 2, "tema": "APS — Longitudinalidade", "enunciado": "Uma mulher de 58 anos, hipertensa, é acompanhada pela mesma equipe de Saúde da Família há oito anos. Nas consultas, o médico já conhece sua história de reações medicamentosas prévias, sua rotina familiar e suas dificuldades de adesão, o que permite ajustar o tratamento com mais segurança. Esse cuidado exemplifica principalmente qual atributo da APS?", "alternativas": {"A": "Integralidade, pela oferta de todos os níveis de atenção", "B": "Longitudinalidade, pela relação continuada e pelo vínculo construído ao longo do tempo", "C": "Primeiro contato, pela facilidade de acesso à unidade", "D": "Ação intersetorial, pela articulação com outros setores"}, "correta": "B", "raciocinio": "O dado central do enunciado é o tempo de acompanhamento (oito anos) pela mesma equipe e o acúmulo de conhecimento sobre a história pessoal da paciente. Isso deve ser diferenciado de integralidade (que trata da amplitude das ações oferecidas) e de primeiro contato (que trata do acesso inicial ao sistema).", "porque_correta": "Longitudinalidade é o atributo que se refere à relação continuada entre profissional/equipe e paciente ao longo do tempo, com vínculo e conhecimento acumulado da história da pessoa — exatamente o que permite o ajuste seguro do tratamento descrito no caso.", "erros": {"A": "Incorreta porque integralidade refere-se à amplitude das ações oferecidas (promoção, prevenção, tratamento, reabilitação, cuidados paliativos), e não ao fato de o vínculo ser antigo e continuado — o caso não menciona diversidade de ações, mas sim tempo de acompanhamento.", "C": "Incorreta porque primeiro contato refere-se ao momento de acesso inicial ao sistema de saúde, e o caso descreve justamente o oposto: um vínculo já consolidado ao longo de vários anos, não um primeiro acesso.", "D": "Incorreta porque ação intersetorial envolve articulação com setores fora da saúde (educação, assistência social, etc.), o que não é mencionado no caso, que se restringe ao vínculo clínico entre paciente e equipe."}}, {"id": 3, "tema": "APS — Coordenação do cuidado", "enunciado": "Um paciente encaminhado ao cardiologista retorna à UBS com uma nova receita, mas sem relatório detalhado. A equipe da APS entra em contato com o especialista, integra a nova prescrição ao prontuário e verifica possíveis interações com os medicamentos que o paciente já utilizava. Essa conduta ilustra principalmente qual atributo da APS?", "alternativas": {"A": "Acesso oportuno, pois o paciente foi atendido rapidamente", "B": "Territorialização, pois a UBS está localizada próxima ao paciente", "C": "Coordenação do cuidado, ao integrar informações e acompanhar o percurso entre diferentes serviços", "D": "Equidade, pois todos os pacientes recebem o mesmo tipo de acompanhamento"}, "correta": "C", "raciocinio": "O elemento-chave é a ação da equipe de buscar informações junto ao especialista e integrar a nova conduta ao conjunto do cuidado do paciente, evitando fragmentação e duplicidade terapêutica. Essa é a definição operacional de coordenação do cuidado dentro dos atributos da APS.", "porque_correta": "Coordenação do cuidado é o atributo que garante que as informações provenientes de diferentes pontos da rede sejam integradas pela APS, que atua como referência central no acompanhamento do percurso do paciente entre os serviços.", "erros": {"A": "Incorreta porque o caso não trata da rapidez do atendimento inicial (acesso), mas sim do que a equipe faz depois do retorno do paciente de outro serviço, integrando as informações recebidas.", "B": "Incorreta porque territorialização refere-se ao processo de conhecer e organizar o cuidado a partir das características do território adscrito, e não à proximidade física entre paciente e unidade nesse episódio específico.", "D": "Incorreta porque equidade envolve ofertar respostas proporcionais à necessidade de cada pessoa para reduzir desigualdades, conceito distinto de integrar informações entre diferentes pontos da rede de atenção."}}, {"id": 4, "tema": "APS — Integralidade", "enunciado": "Uma paciente de 28 anos procura a UBS por dor lombar. Durante a consulta, o médico identifica que ela está com o calendário vacinal atrasado e sem rastreio de câncer de colo do útero há mais de três anos. Qual conduta melhor expressa o atributo da integralidade nesse caso?", "alternativas": {"A": "Tratar apenas a dor lombar e registrar as lacunas preventivas para uma consulta futura exclusiva sobre prevenção", "B": "Encaminhar a paciente à ginecologia e à sala de vacina antes de tratar a queixa principal", "C": "Registrar apenas a queixa principal, pois abordar temas não relatados espontaneamente pode ser invasivo", "D": "Abordar a dor lombar e também as lacunas preventivas na mesma consulta, sempre que viável, sem burocratizar em encaminhamentos desnecessários"}, "correta": "D", "raciocinio": "Integralidade significa considerar, na mesma linha de cuidado, promoção, prevenção, diagnóstico, tratamento e reabilitação — não apenas o motivo declarado da consulta. O raciocínio correto é aproveitar a oportunidade do contato já estabelecido para resolver tanto a queixa quanto as lacunas identificadas, de forma prática e sem fragmentar o cuidado em encaminhamentos desnecessários.", "porque_correta": "A conduta que mais expressa integralidade é aquela que amplia o olhar sobre a pessoa além da queixa principal, resolvendo o que for possível na própria consulta (vacinação, coleta de citopatológico) sem adiar desnecessariamente nem fragmentar o cuidado em múltiplos encaminhamentos evitáveis.", "erros": {"A": "Incorreta porque adiar as ações preventivas identificadas para uma consulta futura desperdiça a oportunidade já criada pelo contato presente, além de gerar risco de a paciente não retornar exclusivamente para isso — reduz a integralidade do cuidado prestado.", "B": "Incorreta porque fragmentar o cuidado em múltiplos encaminhamentos para resolver algo que poderia ser feito na própria UBS (vacinação, coleta de citopatológico) não é necessário e pode até atrasar o atendimento da queixa principal que motivou a busca pelo serviço.", "C": "Incorreta porque integralidade justamente pressupõe que a equipe amplie o olhar para além da queixa relatada espontaneamente; deixar de abordar lacunas preventivas identificadas durante o exame não é evitar invasão, mas sim negligenciar oportunidade de cuidado."}}, {"id": 5, "tema": "APS — Acesso oportuno e acolhimento", "enunciado": "Um paciente procura a UBS sem agendamento prévio, referindo febre e falta de ar iniciadas há um dia. A recepção informa que a próxima vaga disponível na agenda é em três semanas. Qual conduta é mais compatível com o princípio de acesso oportuno da APS?", "alternativas": {"A": "Realizar acolhimento com escuta qualificada e avaliação de risco/necessidade, organizando resposta compatível com a urgência do quadro, mesmo sem agendamento prévio", "B": "Manter a orientação da agenda, marcando a consulta programada em três semanas", "C": "Orientar o paciente a procurar diretamente um pronto-socorro, já que a UBS só trabalha com agenda programada", "D": "Sugerir que retorne no dia seguinte, quando talvez haja vaga disponível"}, "correta": "A", "raciocinio": "O ponto central do caso é reconhecer que acesso na APS não se resume a horário de agenda: é preciso organizar a resposta do serviço de acordo com a necessidade real do usuário. Diante de sintomas agudos e potencialmente graves (febre e dispneia), a resposta adequada é o acolhimento imediato com avaliação de risco, não a simples remissão à agenda programada.", "porque_correta": "Acesso oportuno significa organizar a resposta do serviço de forma compatível com a necessidade clínica apresentada, o que exige acolhimento e classificação de risco/necessidade mesmo para quem chega sem agendamento prévio, evitando reduzir o acesso apenas à lógica de marcação de consultas.", "erros": {"B": "Incorreta porque manter rigidamente a agenda programada, diante de sintomas agudos como febre e falta de ar, ignora a necessidade de resposta compatível com a urgência do quadro, indo contra o princípio de acesso oportuno.", "C": "Incorreta porque a UBS, como porta de entrada preferencial, deve acolher também necessidades agudas — encaminhar automaticamente ao pronto-socorro sem qualquer avaliação prévia transfere uma responsabilidade que cabe primeiro à própria unidade.", "D": "Incorreta porque adiar a avaliação para o dia seguinte, sem qualquer triagem no momento presente, pode ser inadequado diante de sintomas que podem indicar necessidade de atenção mais imediata, como falta de ar."}}, {"id": 6, "tema": "PNAB — Equipe e carga horária na eSF", "enunciado": "Buscando ampliar a cobertura territorial sem contratar novos profissionais, um gestor propõe que o médico de uma equipe de Saúde da Família divida sua carga horária entre duas equipes distintas, atendendo meio período em cada uma. Avalie essa proposta considerando os princípios de organização da eSF.", "alternativas": {"A": "A proposta é adequada, pois amplia a cobertura territorial sem custo adicional", "B": "A proposta é inadequada, pois compromete o vínculo e a longitudinalidade, já que a organização da eSF pressupõe equipe com carga horária dedicada a um território definido", "C": "A proposta é adequada, desde que o número total de consultas mensais seja mantido", "D": "A proposta é adequada apenas se o enfermeiro assumir a coordenação nos períodos de ausência do médico"}, "correta": "B", "raciocinio": "É preciso relacionar a forma de organização da equipe (carga horária, vínculo a um território definido) com os atributos que ela sustenta — sobretudo vínculo e longitudinalidade. Dividir a carga horária de um profissional entre duas equipes fragiliza justamente essa base organizacional, mesmo que o volume total de atendimentos pareça preservado.", "porque_correta": "A organização da eSF pressupõe equipe multiprofissional com carga horária dedicada a um território e população definidos, o que sustenta vínculo, acesso e longitudinalidade. Fragmentar a carga horária de um profissional entre equipes compromete essa estrutura, mesmo que o total de consultas seja mantido.", "erros": {"A": "Incorreta porque ampliar cobertura territorial não pode ser feita à custa da fragmentação do vínculo do profissional com um território e uma população definidos — isso compromete a base da organização da eSF, mesmo sem custo financeiro adicional.", "C": "Incorreta porque manter o número total de consultas não resolve o problema estrutural: o vínculo, a longitudinalidade e a coordenação dependem de continuidade e dedicação a um território específico, não apenas de volume de atendimentos.", "D": "Incorreta porque a substituição temporária de coordenação pelo enfermeiro não resolve o problema de fundo, que é a fragmentação da carga horária do médico entre dois territórios distintos, comprometendo a organização da equipe como um todo."}}, {"id": 7, "tema": "Financiamento da Atenção Básica", "enunciado": "Em uma discussão sobre organização do SUS, um estudante afirma: 'Como a Atenção Primária responde por grande parte dos atendimentos do sistema, é ela quem recebe, proporcionalmente, a maior parcela dos recursos financeiros do SUS.' Avalie essa afirmação.", "alternativas": {"A": "A afirmação está correta, pois maior volume de atendimentos corresponde proporcionalmente a maior financiamento", "B": "A afirmação está correta apenas em municípios de pequeno porte, onde a lógica de financiamento seria distinta", "C": "A afirmação está incorreta: historicamente, a Atenção Básica não recebe a maior parte do financiamento do SUS, que prioriza outros níveis de atenção", "D": "A afirmação está incorreta porque a Atenção Básica não realiza atendimentos, apenas encaminha para outros níveis"}, "correta": "C", "raciocinio": "É preciso separar dois dados: o volume de atendimentos realizados pela APS (proporcionalmente alto) e a proporção do financiamento do SUS destinada a ela (historicamente menor que a destinada a outros níveis, como a atenção hospitalar e especializada). A afirmação do estudante presume uma relação direta entre volume de atendimento e volume de financiamento que não se confirma na organização histórica do sistema.", "porque_correta": "Embora a Atenção Básica responda por parcela expressiva dos atendimentos do sistema, isso não se traduz, historicamente, em receber a maior parte do financiamento do SUS, que tende a priorizar outros níveis de atenção — uma desproporção frequentemente discutida na organização do sistema.", "erros": {"A": "Incorreta porque presume uma correspondência automática entre volume de atendimento e volume de financiamento que não reflete a distribuição histórica de recursos do SUS entre os níveis de atenção.", "B": "Incorreta porque a desproporção entre volume de atendimento e financiamento da Atenção Básica não é um fenômeno restrito a municípios pequenos, mas uma característica mais ampla da organização do financiamento do sistema.", "D": "Incorreta porque a Atenção Básica de fato realiza a maior parte dos atendimentos do sistema, sendo porta de entrada preferencial; o equívoco da afirmação original está na relação com o financiamento, não no fato de ela realizar atendimentos."}}, {"id": 8, "tema": "Planejamento territorial em saúde", "enunciado": "Uma equipe de Saúde da Família utiliza, para o planejamento anual, apenas o mapa territorial elaborado no momento da implantação da unidade, há cinco anos, sem atualizar o cadastro territorial ou revisar os dados da população. Avalie essa prática.", "alternativas": {"A": "A prática é adequada, pois o mapa territorial não muda de forma relevante ao longo dos anos", "B": "A prática é inadequada apenas se a população total do território tiver diminuído", "C": "A prática é adequada, desde que a equipe de profissionais continue a mesma desde a implantação", "D": "A prática é inadequada: o planejamento deve utilizar dados atuais, cadastro territorial atualizado e avaliação contínua, já que a dinâmica populacional e as vulnerabilidades mudam com o tempo"}, "correta": "D", "raciocinio": "O ponto central é entender que territorialização é um processo dinâmico e contínuo, não um retrato estático produzido uma única vez. Um planejamento baseado em dados de cinco anos atrás ignora possíveis mudanças relevantes na composição populacional, nas vulnerabilidades e nas necessidades do território.", "porque_correta": "O planejamento territorial deve se basear em dados atuais, cadastro territorial atualizado e avaliação contínua, pois a dinâmica populacional, migratória e social do território muda ao longo do tempo — um mapa estático de cinco anos atrás não reflete necessariamente a realidade presente.", "erros": {"A": "Incorreta porque territórios vivos mudam: migração, novas construções, alterações de vulnerabilidade e composição populacional podem ser significativas em cinco anos, tornando o mapa antigo pouco representativo da realidade atual.", "B": "Incorreta porque a inadequação da prática não depende apenas da variação numérica da população total; mudanças qualitativas nas vulnerabilidades e nas necessidades do território também tornam o planejamento desatualizado inadequado.", "C": "Incorreta porque a permanência da mesma equipe de profissionais não substitui a necessidade de atualização formal dos dados territoriais — mesmo profissionais experientes precisam de dados atuais para embasar o planejamento."}}, {"id": 9, "tema": "Modalidades de equipe e parâmetros normativos", "enunciado": "Um gestor aplica, para todas as modalidades de equipe de Atenção Básica de seu município — incluindo equipes de Saúde da Família e equipes voltadas a populações específicas —, exatamente os mesmos parâmetros de cobertura populacional e composição, sem qualquer distinção. Avalie essa conduta.", "alternativas": {"A": "É inadequada: diferentes modalidades de equipe têm parâmetros normativos próprios, que não devem ser tratados como equivalentes", "B": "É adequada, pois a PNAB padroniza igualmente todas as modalidades de equipe, sem exceções", "C": "É adequada, desde que o número de agentes comunitários seja o mesmo em todas as equipes", "D": "É inadequada apenas para equipes que atuam em áreas rurais, mas correta para as demais"}, "correta": "A", "raciocinio": "É necessário reconhecer que a Atenção Básica organiza diferentes modalidades de equipe conforme as características da população e do território atendido, cada uma com parâmetros normativos próprios que se atualizam ao longo do tempo. Tratar todas como idênticas ignora essa diferenciação estrutural.", "porque_correta": "Diferentes modalidades de equipe de Atenção Básica possuem parâmetros normativos próprios de composição e cobertura, que devem ser distinguidos e atualizados conforme as normas vigentes — aplicar um único parâmetro a todas as modalidades desconsidera essa diferenciação necessária.", "erros": {"B": "Incorreta porque a organização da Atenção Básica reconhece diferentes modalidades de equipe, adaptadas a diferentes contextos populacionais e territoriais, e não uma padronização única e irrestrita para todas as situações.", "C": "Incorreta porque a adequação da conduta não depende apenas de igualar o número de agentes comunitários; os parâmetros normativos envolvem composição, carga horária e cobertura de forma mais ampla, específicos a cada modalidade.", "D": "Incorreta porque a necessidade de distinguir parâmetros normativos entre modalidades de equipe não se restringe a áreas rurais; aplica-se de forma geral sempre que existirem modalidades distintas em um mesmo município."}}, {"id": 10, "tema": "Conselho gestor e acesso de trabalhadores", "enunciado": "Em reunião do conselho gestor de uma UBS, um membro relata que parte da população, por trabalhar em horário comercial e retornar tarde para casa, tem dificuldade de acesso aos serviços e menor vínculo com a equipe. Qual conceito está mais diretamente relacionado a esse problema e qual seria uma resposta adequada?", "alternativas": {"A": "O problema é de integralidade; a resposta adequada é ampliar a oferta de especialidades na unidade", "B": "O problema envolve abrangência de acesso e continuidade do vínculo; equipe e conselho gestor podem propor ajustes de horário/estratégias de acesso para incluir esse grupo", "C": "O problema é de território; a resposta adequada é redefinir os limites geográficos da área adstrita", "D": "O problema é de coordenação; a resposta adequada é encaminhar esses usuários a um serviço especializado"}, "correta": "B", "raciocinio": "O relato indica que uma parcela específica da população, por questões de horário de trabalho, tem seu acesso limitado e, por consequência, seu vínculo longitudinal prejudicado. O papel do conselho gestor é justamente identificar essa lacuna e propor ajustes operacionais (como horários estendidos ou estratégias alternativas) que ampliem o acesso desse grupo.", "porque_correta": "O problema relatado envolve diretamente a abrangência do acesso (parte da população não consegue chegar à unidade nos horários disponíveis) e a continuidade do vínculo longitudinal; a resposta adequada envolve o próprio papel do conselho gestor de propor ajustes de organização do serviço para incluir esse grupo.", "erros": {"A": "Incorreta porque o problema descrito não é falta de amplitude de serviços ofertados (integralidade), mas sim dificuldade de horário para acessar os serviços já existentes; ampliar especialidades não resolve a questão do horário de acesso.", "C": "Incorreta porque redefinir os limites geográficos da área não resolveria um problema que é de horário de funcionamento e estratégia de acesso, não de delimitação territorial.", "D": "Incorreta porque o problema não envolve a integração de informações entre diferentes serviços (coordenação), mas sim a própria possibilidade de acesso ao serviço da APS dentro do horário disponível ao trabalhador."}}, {"id": 11, "tema": "Síntese dos atributos da APS", "enunciado": "Uma UBS acolhe bem as demandas agudas quando o paciente procura a unidade, mas não realiza busca ativa de faltosos crônicos, os encaminhamentos a especialistas não retornam com contrarreferência, e cada profissional tende a tratar apenas a queixa do dia, sem revisar o quadro preventivo do paciente. Quais atributos da APS estão comprometidos nessa situação, apesar do bom primeiro contato?", "alternativas": {"A": "Apenas o acesso está comprometido; os demais atributos permanecem preservados", "B": "Nenhum atributo está comprometido, já que o acesso inicial é adequado", "C": "Longitudinalidade (ausência de busca ativa/vínculo continuado), coordenação (falta de contrarreferência) e integralidade (queixa tratada de forma isolada) estão comprometidas", "D": "Apenas a integralidade está comprometida, pois acesso e coordenação dependem exclusivamente dos especialistas"}, "correta": "C", "raciocinio": "É preciso analisar separadamente cada elemento do caso: a ausência de busca ativa de faltosos crônicos compromete a longitudinalidade (vínculo continuado); a falta de retorno de contrarreferência compromete a coordenação; e o hábito de tratar apenas a queixa pontual, sem revisão preventiva, compromete a integralidade. O bom primeiro contato não garante, por si só, que os demais atributos estejam preservados.", "porque_correta": "O caso apresenta três falhas distintas e simultâneas: falta de vínculo continuado (longitudinalidade), falta de integração de informações entre a UBS e o especialista (coordenação) e abordagem fragmentada da pessoa (integralidade) — mesmo que o acesso inicial (primeiro contato) esteja preservado.", "erros": {"A": "Incorreta porque, além do acesso, o caso descreve claramente falhas de longitudinalidade (ausência de busca ativa), coordenação (falta de contrarreferência) e integralidade (queixa tratada isoladamente) — não apenas de acesso, que inclusive está descrito como adequado.", "B": "Incorreta porque o bom primeiro contato (acesso) não implica que os demais atributos estejam preservados; o caso descreve explicitamente falhas de longitudinalidade, coordenação e integralidade, independentemente do acesso ser adequado.", "D": "Incorreta porque tanto o acesso quanto a coordenação são atributos que dependem primariamente da própria organização da APS, e não exclusivamente dos especialistas; a coordenação, inclusive, é justamente a responsabilidade da APS de integrar as informações vindas de outros serviços."}}, {"id": 12, "tema": "Territorialização — território vivo", "enunciado": "Um gestor resume o conceito de território, para fins de planejamento, apenas como 'a linha no mapa que delimita a área de abrangência da equipe', desconsiderando fluxos de trabalho, moradia e cultura da população. Avalie essa definição.", "alternativas": {"A": "A definição está correta, pois território é essencialmente um limite administrativo fixo", "B": "A definição está correta apenas em áreas rurais, onde os limites são mais estáveis", "C": "A definição é irrelevante para o planejamento em saúde, que deve se basear apenas em indicadores epidemiológicos", "D": "A definição está incompleta: o território é 'vivo' e inclui circulação, trabalho, moradia, cultura e acesso da população, não apenas o limite geográfico formal"}, "correta": "D", "raciocinio": "É preciso diferenciar o conceito administrativo de território (limite no mapa) do conceito de território vivo usado na Saúde da Família, que incorpora dinâmicas sociais como circulação de pessoas, relações de trabalho, moradia e cultura. Reduzir o território a uma linha no mapa ignora exatamente esses elementos dinâmicos.", "porque_correta": "O território, no contexto da APS, é entendido como espaço vivo, que vai além do limite geográfico formal e incorpora a circulação, o trabalho, a moradia, a cultura e o acesso da população — elementos essenciais para o diagnóstico e o planejamento do cuidado.", "erros": {"A": "Incorreta porque reduzir o território a um limite administrativo fixo ignora justamente as dinâmicas sociais, culturais e de circulação que caracterizam o território como espaço vivo, essenciais para compreender as necessidades da população.", "B": "Incorreta porque a necessidade de considerar circulação, trabalho, moradia e cultura da população não se restringe a áreas rurais — aplica-se também, e frequentemente de forma ainda mais complexa, a territórios urbanos.", "C": "Incorreta porque o conceito de território é central, e não irrelevante, para o planejamento em saúde: indicadores epidemiológicos isolados não substituem a compreensão da dinâmica social e cultural do território."}}, {"id": 13, "tema": "Diagnóstico situacional do território", "enunciado": "Para elaborar o diagnóstico de saúde do território, um profissional propõe utilizar exclusivamente os dados já registrados nos sistemas de informação da atenção básica, sem conversar com lideranças comunitárias ou observar diretamente o território. Avalie essa proposta.", "alternativas": {"A": "A proposta é insuficiente: o diagnóstico territorial deve combinar dados epidemiológicos, escuta comunitária e observação direta do território", "B": "A proposta é suficiente, pois os sistemas de informação já refletem toda a realidade do território", "C": "A proposta é insuficiente, mas apenas em territórios exclusivamente rurais, sendo suficiente nos demais", "D": "A proposta é suficiente, desde que os dados sejam atualizados mensalmente"}, "correta": "A", "raciocinio": "O raciocínio exige reconhecer os limites dos sistemas de informação em saúde: eles capturam dados estruturados (atendimentos, cadastros, indicadores), mas não captam aspectos qualitativos como percepções da comunidade, dinâmicas sociais informais e particularidades culturais, que só são acessíveis por meio de escuta e observação direta.", "porque_correta": "Um diagnóstico territorial completo deve combinar três fontes complementares: dados epidemiológicos/de sistemas de informação, escuta comunitária e observação direta do território — cada uma capta uma dimensão diferente da realidade local que as outras não alcançam sozinhas.", "erros": {"B": "Incorreta porque sistemas de informação em saúde registram dados estruturados (atendimentos, cadastros), mas não captam dimensões qualitativas como percepções da comunidade, conflitos sociais e particularidades culturais do território.", "C": "Incorreta porque a limitação dos sistemas de informação em captar a complexidade social e cultural do território não é exclusiva de áreas rurais — aplica-se igualmente, e muitas vezes de forma ainda mais intensa, a territórios urbanos complexos.", "D": "Incorreta porque a frequência de atualização dos dados não resolve o problema de fundo: mesmo dados atualizados mensalmente continuam sendo apenas uma fonte parcial, que precisa ser complementada por escuta comunitária e observação direta."}}, {"id": 14, "tema": "Equidade x igualdade no cuidado", "enunciado": "Uma equipe de Saúde da Família organiza o número de visitas domiciliares mensais de forma idêntica para todas as famílias da área, independentemente de haver idosos acamados, crianças com desnutrição ou nenhum fator de risco identificado. Avalie essa organização.", "alternativas": {"A": "Nenhum princípio está sendo violado, pois tratar todas as famílias de forma igual é sempre o mais correto", "B": "O princípio da equidade está sendo negligenciado; famílias com maior necessidade deveriam receber acompanhamento mais intenso, de forma proporcional", "C": "O princípio da universalidade está sendo violado; a equipe deveria reduzir as visitas às famílias sem fatores de risco", "D": "O princípio da territorialização está sendo violado, pois as visitas deveriam seguir ordem alfabética"}, "correta": "B", "raciocinio": "É necessário diferenciar igualdade (tratar todos da mesma forma) de equidade (oferecer respostas proporcionais à necessidade de cada um). Distribuir o mesmo número de visitas para famílias com necessidades muito diferentes ignora justamente o princípio da proporcionalidade que sustenta a equidade em saúde.", "porque_correta": "Equidade significa que respostas podem e devem ser diferenciadas conforme a necessidade, para reduzir desigualdades injustas; famílias com maior vulnerabilidade (idosos acamados, crianças desnutridas) deveriam receber acompanhamento proporcionalmente mais intenso, o que não ocorre na organização descrita.", "erros": {"A": "Incorreta porque tratar todas as famílias de forma idêntica, independentemente de sua necessidade, é exatamente o oposto do princípio de equidade, que pressupõe intensidade de cuidado proporcional à necessidade de cada família.", "C": "Incorreta porque universalidade se refere ao direito de todas as pessoas ao cuidado, não sendo violada por uma distribuição igualitária de visitas; o problema descrito é de proporcionalidade (equidade), não de garantia de acesso universal.", "D": "Incorreta porque o problema descrito não envolve os limites geográficos do território, mas sim a distribuição da intensidade de cuidado conforme a necessidade de cada família — questão de equidade, não de territorialização."}}, {"id": 15, "tema": "Vulnerabilidade — evitar estigmatização", "enunciado": "Buscando priorizar o atendimento, um profissional sugere afixar na recepção uma lista visível identificando 'famílias vulneráveis', para que sejam atendidas com prioridade. Com o tempo, a lista passa a expor publicamente essas famílias diante dos demais usuários. Avalie essa estratégia.", "alternativas": {"A": "Não há problema, pois identificar vulnerabilidade é sempre positivo, independentemente da forma de registro", "B": "A prioridade deveria ser abolida, atendendo todos rigorosamente por ordem de chegada", "C": "A identificação de vulnerabilidade deve orientar a oferta de cuidado internamente à equipe, de forma sigilosa, sem se tornar um rótulo público que gere estigma", "D": "A lista deveria ser exposta a toda a comunidade, garantindo maior transparência do processo"}, "correta": "C", "raciocinio": "O objetivo de identificar vulnerabilidade é orientar a oferta de cuidado e apoio — mas isso deve ocorrer de forma sigilosa, internamente à equipe. Quando a identificação se transforma em exposição pública, ela passa a gerar estigma, o que contraria justamente o princípio de que vulnerabilidade não deve virar rótulo ou barreira.", "porque_correta": "A vulnerabilidade deve orientar a oferta de cuidado e apoio de forma interna e sigilosa à equipe, evitando que a identificação se transforme em rótulo público, o que gera estigma e pode até afastar as famílias do serviço, em vez de aproximá-las do cuidado necessário.", "erros": {"A": "Incorreta porque a forma de registro importa muito: identificar vulnerabilidade de maneira pública e exposta gera estigma e pode prejudicar a relação de confiança entre a família e a equipe, mesmo que a intenção inicial fosse positiva.", "B": "Incorreta porque abolir totalmente a priorização de famílias mais vulneráveis contraria o princípio de equidade, que justamente prevê maior intensidade de cuidado para quem tem maior necessidade — o problema não é priorizar, mas expor publicamente.", "D": "Incorreta porque expor a lista a toda a comunidade amplia, em vez de reduzir, o problema de estigmatização das famílias identificadas, sendo o oposto do cuidado ético esperado no manejo dessa informação."}}, {"id": 16, "tema": "Vulnerabilidade — situação de rua e busca ativa", "enunciado": "Uma pessoa em situação de rua há vários anos apresenta lesões de pele hipoestésicas e tosse crônica, mas raramente procura os serviços de saúde por conta própria. Um agente comunitário identifica a situação durante atividade de rotina no território. Qual é a conduta mais adequada da equipe?", "alternativas": {"A": "A equipe deve aguardar que a pessoa procure espontaneamente a unidade, respeitando integralmente sua autonomia", "B": "A equipe deve encaminhar diretamente para internação hospitalar, independentemente de qualquer avaliação clínica prévia", "C": "A equipe não deve atuar até que a pessoa apresente documentação civil regularizada", "D": "A equipe deve realizar busca ativa e abordagem no território, investigando as queixas (possível hanseníase e tuberculose), já que populações em vulnerabilidade acentuada frequentemente têm menor acesso espontâneo aos serviços"}, "correta": "D", "raciocinio": "O caso reúne dois achados clínicos de relevância epidemiológica em população em situação de rua (lesões hipoestésicas sugestivas de hanseníase e tosse crônica sugestiva de tuberculose) com um padrão de baixo acesso espontâneo ao serviço. A conduta correta combina o reconhecimento da vulnerabilidade com uma resposta proativa da equipe, e não a espera passiva.", "porque_correta": "Populações em vulnerabilidade acentuada, como pessoas em situação de rua, frequentemente têm menor acesso espontâneo aos serviços de saúde; por isso, a equipe deve adotar estratégias proativas, como busca ativa e abordagem no território, para investigar adequadamente as queixas apresentadas.", "erros": {"A": "Incorreta porque, diante de uma população com baixo acesso espontâneo aos serviços e sinais clínicos relevantes, aguardar passivamente pode significar atraso importante no diagnóstico e tratamento de condições como hanseníase e tuberculose, com impacto individual e coletivo (risco de transmissão).", "B": "Incorreta porque encaminhar diretamente para internação hospitalar sem qualquer avaliação clínica prévia é desproporcional e não corresponde ao fluxo adequado de investigação diagnóstica, que deve começar pela avaliação e investigação no território ou na unidade.", "C": "Incorreta porque exigir documentação civil regularizada como pré-condição para atuação da equipe de saúde contraria o princípio de acesso universal ao cuidado, sobretudo para populações em situação de maior vulnerabilidade social."}}, {"id": 17, "tema": "Priorização em território de alta densidade populacional", "enunciado": "Uma médica assume um território de favela muito populoso, o que torna inviável o acompanhamento individualizado imediato de toda a população sob sua responsabilidade. Qual estratégia é mais adequada?", "alternativas": {"A": "A equipe deve priorizar grupos com maior vulnerabilidade — crianças pequenas, gestantes e idosos —, organizando agenda por estratificação de risco", "B": "A equipe deve atender estritamente por ordem de chegada, sem qualquer forma de priorização clínica", "C": "A equipe deve recusar-se a atender até que seja ampliada pela gestão municipal", "D": "A equipe deve reduzir o número de consultas diárias até que a população do território diminua"}, "correta": "A", "raciocinio": "Diante de uma limitação operacional real (grande volume populacional para uma única equipe), o raciocínio correto não é a inação nem a recusa, mas a organização do cuidado por estratificação de risco, priorizando grupos historicamente mais vulneráveis a agravos (crianças pequenas, gestantes, idosos), sem deixar de atender o restante da população ao longo do tempo.", "porque_correta": "Diante de população muito numerosa para acompanhamento individualizado imediato, a estratégia tecnicamente adequada é organizar o cuidado por estratificação de risco e prioridade, concentrando esforços inicialmente nos grupos de maior vulnerabilidade, sem abandonar o restante da população.", "erros": {"B": "Incorreta porque atender estritamente por ordem de chegada, sem qualquer priorização, ignora o princípio de equidade e pode deixar grupos de maior risco (crianças pequenas, gestantes, idosos) sem acompanhamento adequado e em tempo oportuno.", "C": "Incorreta porque recusar-se a atender até uma eventual ampliação da equipe abandona completamente a população do território, o que não é uma resposta aceitável do ponto de vista ético e assistencial, mesmo diante de limitações reais de recursos.", "D": "Incorreta porque reduzir o número de consultas diárias não resolve o problema de desproporção entre demanda e capacidade da equipe; pelo contrário, reduziria ainda mais o acesso da população ao cuidado necessário."}}, {"id": 18, "tema": "Ação intersetorial", "enunciado": "Uma equipe de Saúde da Família percebe um padrão de aumento de acidentes de trânsito envolvendo crianças em uma área com ruas sem sinalização adequada, próxima a uma escola. Qual conduta reflete melhor o princípio de ação intersetorial da APS?", "alternativas": {"A": "A equipe deve tratar apenas os casos clínicos que chegam à unidade, sem interferir em questões fora do setor saúde", "B": "A equipe deve articular com a escola, o setor de mobilidade urbana e lideranças locais, já que determinantes sociais como infraestrutura urbana raramente se resolvem apenas dentro da UBS", "C": "A equipe deve apenas emitir um relatório epidemiológico interno, sem contato com outros setores", "D": "A equipe deve aguardar que a Secretaria de Saúde tome a iniciativa isoladamente"}, "correta": "B", "raciocinio": "O caso descreve um problema cuja causa raiz (infraestrutura viária inadequada) está fora do alcance direto da equipe de saúde. O raciocínio correto reconhece que determinantes sociais como esse raramente se resolvem apenas com ações clínicas dentro da UBS, exigindo articulação com outros setores e atores do território.", "porque_correta": "Determinantes sociais complexos, como infraestrutura viária inadequada, raramente se resolvem apenas dentro da UBS; a ação intersetorial — envolvendo escola, setor de mobilidade urbana e lideranças locais — é a estratégia adequada para enfrentar esse tipo de problema de forma mais efetiva.", "erros": {"A": "Incorreta porque restringir a atuação da equipe apenas aos casos clínicos que chegam à unidade ignora o papel da APS na identificação e no enfrentamento de determinantes sociais de saúde presentes no território, que vão além do atendimento individual.", "C": "Incorreta porque produzir apenas um relatório interno, sem qualquer articulação com outros setores, não avança na resolução do problema identificado, que depende de ações fora do alcance exclusivo da equipe de saúde.", "D": "Incorreta porque aguardar passivamente uma iniciativa isolada da Secretaria de Saúde contraria o princípio de participação ativa da equipe local na construção de ações intersetoriais junto à comunidade e a outros setores do território."}}, {"id": 19, "tema": "Avaliação de impacto de ações intersetoriais", "enunciado": "Uma equipe realizou um mutirão de limpeza em parceria com moradores para reduzir criadouros de mosquito, mas não definiu indicadores, responsáveis ou uma forma de avaliar os resultados posteriormente. O que faltou tecnicamente no planejamento dessa ação?", "alternativas": {"A": "Nada faltou, pois a simples realização da ação já garante impacto positivo", "B": "Faltou apenas convidar mais moradores para participar do mutirão", "C": "Faltou definir objetivo, responsáveis, indicadores e revisão dos resultados, elementos necessários para avaliar o real impacto da ação intersetorial", "D": "Faltou solicitar autorização formal da vigilância sanitária antes de iniciar a ação"}, "correta": "C", "raciocinio": "Uma ação intersetorial bem planejada não se limita à execução da atividade em si; precisa incluir elementos de gestão que permitam avaliar seu impacto real: definição clara de objetivo, responsáveis por cada etapa, indicadores mensuráveis e um momento de revisão dos resultados obtidos. A ausência desses elementos compromete a capacidade da equipe de saber se a ação realmente funcionou.", "porque_correta": "Toda ação intersetorial, para ser avaliada quanto ao seu real impacto, precisa contemplar objetivo definido, responsáveis por cada etapa, indicadores de acompanhamento e um momento estruturado de revisão dos resultados — elementos que estavam ausentes no planejamento do mutirão descrito.", "erros": {"A": "Incorreta porque a realização de uma ação, por si só, não garante impacto positivo comprovável; sem indicadores e avaliação de resultados, a equipe não tem como saber se houve, de fato, redução relevante dos criadouros de mosquito.", "B": "Incorreta porque o problema central não é o número de participantes no mutirão, mas a ausência de estrutura de planejamento e avaliação (objetivo, responsáveis, indicadores, revisão de resultados) que permitiria mensurar o impacto da ação realizada.", "D": "Incorreta porque, embora a articulação com a vigilância sanitária possa ser útil em determinados contextos, o problema central apontado no caso é a ausência de elementos de planejamento e avaliação de impacto, não uma questão de autorização formal prévia."}}, {"id": 20, "tema": "Genograma — interpretação de símbolos", "enunciado": "No genograma de uma família, os símbolos quadrado (pai) e quadrado (filho) aparecem ligados por uma linha em zigue-zague, enquanto os símbolos dos pais estão ligados por uma linha dupla. Qual é a leitura correta desses elementos?", "alternativas": {"A": "A linha em zigue-zague indica proximidade entre pai e filho, e a linha dupla indica conflito conjugal", "B": "Os símbolos quadrados representam mulheres e os círculos representam homens, invertendo a leitura convencional", "C": "As linhas do genograma representam apenas grau de parentesco, sem qualquer informação sobre a qualidade da relação", "D": "A linha em zigue-zague entre pai e filho indica relação conflituosa, enquanto a linha dupla entre os pais indica um vínculo estreito/próximo"}, "correta": "D", "raciocinio": "O genograma utiliza uma notação padronizada em que o tipo de linha entre os símbolos comunica a qualidade do relacionamento, e não apenas o grau de parentesco. É preciso lembrar que a linha em zigue-zague convencionalmente representa conflito, enquanto a linha dupla representa uma relação de vínculo estreito — o oposto do que a alternativa A propõe.", "porque_correta": "Na notação convencional do genograma, o quadrado representa uma pessoa do sexo masculino, o círculo uma pessoa do sexo feminino, a linha em zigue-zague indica relação conflituosa entre os indivíduos conectados, e a linha dupla indica um vínculo próximo/estreito — exatamente a leitura descrita nesta alternativa.", "erros": {"A": "Incorreta porque inverte o significado das linhas: a linha em zigue-zague representa conflito (não proximidade), e a linha dupla representa vínculo estreito (não conflito conjugal) — a leitura está trocada.", "B": "Incorreta porque, na notação convencional do genograma, o quadrado representa pessoa do sexo masculino e o círculo representa pessoa do sexo feminino; a alternativa propõe justamente a inversão dessa convenção.", "C": "Incorreta porque um dos principais valores do genograma é justamente comunicar a qualidade das relações familiares (proximidade, conflito, ruptura) através de diferentes tipos de linha, e não apenas indicar o grau de parentesco entre os membros."}}, {"id": 21, "tema": "Genograma x ecomapa — funções distintas", "enunciado": "A equipe deseja compreender rapidamente se uma família tem apoio de vizinhos, igreja e serviços de assistência social, além de mapear a estrutura de parentesco da família ao longo de gerações. Qual instrumento é mais adequado para cada finalidade?", "alternativas": {"A": "O genograma representa a estrutura e relações familiares ao longo de gerações, enquanto o ecomapa mostra as conexões da família com serviços e recursos comunitários; para apoio externo, o ecomapa é o instrumento mais adequado", "B": "O genograma é mais adequado para mapear a rede de apoio externo, e o ecomapa para a estrutura familiar interna", "C": "Ambos os instrumentos têm exatamente a mesma função, podendo ser usados de forma intercambiável", "D": "Nenhum dos dois instrumentos é útil para essa finalidade, sendo necessária entrevista estruturada separada"}, "correta": "A", "raciocinio": "É preciso diferenciar claramente o objeto de cada instrumento: o genograma foca na estrutura e nas relações internas da família ao longo de gerações; o ecomapa foca nas conexões da família com o ambiente externo (serviços, grupos, comunidade). Para responder sobre apoio de vizinhos, igreja e assistência social, o instrumento correto é o ecomapa.", "porque_correta": "O genograma representa a estrutura e as relações familiares intergeracionais, enquanto o ecomapa mostra especificamente as conexões da família com sistemas externos — serviços, grupos e recursos comunitários —, sendo por isso o instrumento adequado para mapear apoio de vizinhos, igreja e assistência social.", "erros": {"B": "Incorreta porque inverte as funções dos instrumentos: o genograma é o que mapeia a estrutura familiar interna (parentesco, gerações), e o ecomapa é o que mapeia a rede de apoio externo — exatamente o oposto do proposto na alternativa.", "C": "Incorreta porque, embora complementares, os dois instrumentos têm focos distintos: um trata da estrutura familiar interna e outro das conexões externas da família, não sendo, portanto, intercambiáveis.", "D": "Incorreta porque tanto o genograma quanto o ecomapa são instrumentos amplamente utilizados e reconhecidos na abordagem familiar em MFC exatamente para esses fins, sem necessidade de substituí-los por outro método."}}, {"id": 22, "tema": "Ecomapa — leitura de lacunas de suporte", "enunciado": "O ecomapa de uma família mostra apenas uma linha tracejada e fina conectando a família ao serviço de saúde, sem nenhuma conexão com escola, trabalho ou grupos comunitários, apesar de a família ter filhos em idade escolar e um adulto em busca de emprego. Qual é a leitura clínica mais adequada?", "alternativas": {"A": "A família possui rede de apoio robusta e não necessita de qualquer intervenção adicional", "B": "O ecomapa sugere rede de apoio frágil e possíveis lacunas de suporte, o que deve orientar o plano de cuidado para fortalecer essas conexões", "C": "A ausência de linhas indica apenas falha do profissional ao desenhar, sem significado clínico relevante", "D": "O ecomapa deve ser refeito, pois toda família tem obrigatoriamente conexões fortes com escola e trabalho"}, "correta": "B", "raciocinio": "É necessário interpretar o ecomapa como um retrato da rede de apoio real da família: uma única linha tênue com o serviço de saúde e ausência de conexões com escola e trabalho (apesar de haver filhos em idade escolar e um adulto buscando emprego) sinaliza uma lacuna relevante de suporte, que deve ser incorporada ao plano de cuidado, e não ignorada.", "porque_correta": "A leitura do ecomapa deve considerar tanto a presença quanto a ausência de conexões: neste caso, a falta de vínculo com escola e trabalho, somada a um vínculo tênue com a saúde, sugere rede de apoio frágil, o que deve orientar a equipe a atuar no fortalecimento dessas conexões.", "erros": {"A": "Incorreta porque o próprio ecomapa descrito mostra o oposto de uma rede robusta: apenas uma conexão tênue com a saúde e nenhuma conexão com escola ou trabalho, apesar de haver necessidade identificada (filhos em idade escolar, adulto buscando emprego).", "C": "Incorreta porque a ausência de linhas no ecomapa é justamente uma informação clínica relevante — indica falta de conexão da família com aquele sistema —, e não um mero erro de preenchimento sem significado.", "D": "Incorreta porque não existe uma obrigatoriedade de que toda família tenha conexões fortes com escola e trabalho representadas no ecomapa; a ausência dessas conexões, quando há necessidade identificada, é justamente um achado clínico a ser trabalhado, não um erro de preenchimento."}}, {"id": 23, "tema": "Uso clínico do genograma e ecomapa", "enunciado": "Um profissional preenche o genograma e o ecomapa de uma família baseando-se apenas em suposições sobre a composição familiar, sem perguntar diretamente aos membros presentes na consulta. Qual é o principal problema dessa conduta?", "alternativas": {"A": "Não há problema, pois os instrumentos servem justamente para que o profissional infira a estrutura familiar sem necessidade de perguntar", "B": "O problema é apenas o tempo gasto na atividade, que deveria ter sido maior", "C": "As ferramentas devem apoiar hipóteses e o planejamento do cuidado, mas não substituem a escuta ativa da família; construí-las por suposição pode gerar informações incorretas", "D": "O problema é usar os dois instrumentos ao mesmo tempo, quando apenas um já seria suficiente"}, "correta": "C", "raciocinio": "O raciocínio central é lembrar que genograma e ecomapa são ferramentas de apoio ao raciocínio clínico, construídas a partir da escuta ativa da família — e não instrumentos de inferência baseados em suposições do profissional. Presumir a composição familiar sem checagem direta compromete a confiabilidade das informações e, por consequência, o plano de cuidado baseado nelas.", "porque_correta": "O genograma e o ecomapa devem apoiar hipóteses e o planejamento do cuidado, mas não substituem a escuta ativa da família; construí-los com base em suposições, sem checagem direta com os membros presentes, pode gerar informações incorretas que comprometem a qualidade do cuidado planejado.", "erros": {"A": "Incorreta porque os instrumentos foram concebidos para representar de forma fiel a estrutura e as relações reais da família, obtidas por meio de escuta ativa — não para que o profissional infira essas informações a partir de suposições próprias.", "B": "Incorreta porque o problema central não é a duração da atividade, mas sim a fonte das informações registradas: construir os instrumentos por suposição, independentemente do tempo gasto, compromete a fidedignidade dos dados.", "D": "Incorreta porque genograma e ecomapa têm funções complementares e distintas (estrutura familiar interna e rede externa de apoio, respectivamente); o problema do caso não está no uso simultâneo dos dois instrumentos, mas na forma como foram preenchidos."}}, {"id": 24, "tema": "Aspectos éticos no registro do genograma", "enunciado": "Durante a construção do genograma, um membro da família revela informação sensível sobre um parente e pede que ela não seja registrada de forma explícita no prontuário compartilhado pela equipe. Qual conduta é mais adequada?", "alternativas": {"A": "A informação deve ser registrada exatamente como foi dita, pois o prontuário deve ser sempre completo e literal", "B": "A informação deve ser completamente ignorada, já que não pode ser registrada de nenhuma forma", "C": "A informação deve ser compartilhada apenas verbalmente entre os profissionais, sem qualquer registro, mesmo que isso comprometa a continuidade do cuidado", "D": "O pedido deve ser respeitado, buscando-se registrar a informação com consentimento e linguagem respeitosa, preservando a confiança da família e revisando o genograma com ela quando pertinente"}, "correta": "D", "raciocinio": "O caso exige equilibrar dois valores: a utilidade clínica da informação para o cuidado da família e o respeito ao pedido explícito de confidencialidade feito por um de seus membros. A conduta adequada busca um caminho intermediário — respeitar o pedido, adequando a forma de registro com consentimento e linguagem cuidadosa, sem descartar completamente a informação nem simplesmente ignorar o pedido da família.", "porque_correta": "O cuidado ético no registro do genograma envolve buscar consentimento e usar linguagem respeitosa, ajustando a forma de registro conforme o pedido da família, o que preserva a confiança no vínculo e permite revisar o instrumento com ela quando for apropriado — sem simplesmente ignorar a informação ou o pedido.", "erros": {"A": "Incorreta porque registrar a informação exatamente como foi dita, ignorando o pedido explícito de confidencialidade da família, desrespeita a autonomia e a confiança depositada na equipe, podendo até comprometer o vínculo terapêutico.", "B": "Incorreta porque ignorar completamente a informação pode comprometer a compreensão do contexto familiar necessária ao cuidado; o desafio ético não é descartar a informação, mas encontrar uma forma adequada e respeitosa de lidar com ela.", "C": "Incorreta porque restringir a informação apenas à comunicação verbal entre profissionais, sem qualquer registro formal, pode comprometer a continuidade do cuidado por outros membros da equipe ao longo do tempo, além de não resolver adequadamente a questão ética envolvida."}}, {"id": 25, "tema": "Saúde mental — avaliação inicial de piora depressiva", "enunciado": "Um paciente já acompanhado por quadro depressivo leve retorna à UBS relatando piora dos sintomas há três semanas, com maior prejuízo funcional e alterações do sono e do apetite. Qual deve ser o primeiro passo da equipe?", "alternativas": {"A": "Caracterizar novamente os sintomas atuais (duração, intensidade, prejuízo funcional, sono) e avaliar segurança antes de qualquer ajuste terapêutico", "B": "Aumentar empiricamente a dose de qualquer medicação em uso, sem nova avaliação clínica", "C": "Encaminhar diretamente para internação psiquiátrica, apenas pela piora relatada, sem nova avaliação", "D": "Suspender o acompanhamento na APS, transferindo o caso integralmente ao CAPS"}, "correta": "A", "raciocinio": "Diante de qualquer relato de piora de quadro psíquico já acompanhado, o primeiro passo do raciocínio clínico não é a mudança automática de conduta, mas a reavaliação estruturada: caracterizar os sintomas atuais e, fundamentalmente, avaliar segurança (risco de autolesão ou suicídio) antes de decidir qualquer ajuste terapêutico, encaminhamento ou intensificação de tratamento.", "porque_correta": "Diante de piora relatada, o primeiro passo é sempre a reavaliação clínica estruturada — caracterizando sintomas atuais e avaliando segurança — antes de qualquer decisão terapêutica; pular essa etapa e partir direto para uma conduta específica é um erro de sequência no raciocínio clínico.", "erros": {"B": "Incorreta porque ajustar empiricamente a dose de medicação sem nova avaliação clínica ignora a necessidade de caracterizar a piora atual e avaliar segurança antes de qualquer intervenção terapêutica, podendo ser inadequado ou insuficiente conforme a real gravidade do quadro.", "C": "Incorreta porque encaminhar diretamente para internação, sem avaliação prévia estruturada, é uma conduta desproporcional diante apenas do relato de piora, sem que se tenha ainda caracterizado a gravidade real do quadro nem avaliado especificamente o risco.", "D": "Incorreta porque suspender o acompanhamento na APS e transferir integralmente o caso ao CAPS, sem avaliação prévia, contraria o princípio de que a APS pode acolher, avaliar e acompanhar quadros compatíveis com sua capacidade, articulando a rede apenas conforme a gravidade identificada."}}, {"id": 26, "tema": "Saúde mental — avaliação de risco suicida", "enunciado": "Durante a consulta, um paciente com sintomas depressivos comenta: 'às vezes penso que seria mais fácil não estar aqui.' Receoso de 'induzir a ideia', o profissional evita aprofundar o assunto e muda de tema. Avalie essa conduta.", "alternativas": {"A": "A conduta foi adequada, pois perguntar diretamente sobre suicídio pode induzir o comportamento", "B": "A conduta foi inadequada: é necessário investigar intenção, plano, meios e fatores protetores; perguntar diretamente não aumenta o risco", "C": "A conduta foi adequada, pois esse tipo de comentário costuma não ter relevância clínica", "D": "A conduta foi inadequada apenas por não ter sido registrada em prontuário, mas aprofundar o tema não era necessário"}, "correta": "B", "raciocinio": "O comentário do paciente é um sinal de alerta que exige investigação ativa, não evitação. É importante desconstruir a crença equivocada de que perguntar diretamente sobre ideação suicida aumenta o risco — na verdade, essa investigação é parte essencial da avaliação de segurança e não induz comportamento suicida.", "porque_correta": "Diante de qualquer sinal de ideação, mesmo indireto, é necessário investigar ativamente intenção, plano, meios disponíveis, tentativas prévias e fatores protetores; perguntar diretamente sobre o tema não aumenta o risco e é etapa essencial e obrigatória da avaliação de segurança em saúde mental.", "erros": {"A": "Incorreta porque essa é uma crença equivocada e amplamente desmentida na literatura: perguntar diretamente sobre ideação suicida não induz o comportamento; pelo contrário, evitar o tema pode deixar de identificar um risco real que precisa de manejo adequado.", "C": "Incorreta porque um comentário como esse, mesmo que indireto, é um sinal de alerta relevante que deve sempre ser investigado ativamente, e não descartado como algo sem relevância clínica.", "D": "Incorreta porque o problema não é apenas de registro em prontuário; a falha real está em não ter aprofundado a investigação sobre intenção, plano, meios e fatores protetores no momento em que o sinal de alerta foi verbalizado pelo paciente."}}, {"id": 27, "tema": "Saúde mental — diagnóstico diferencial em quadro depressivo", "enunciado": "Um paciente com quadro sugestivo de depressão relata, ao ser questionado, episódios anteriores de humor elevado, redução da necessidade de sono e aumento de energia com impulsividade — dados que não haviam sido investigados antes do início do antidepressivo. Por que essa investigação é importante?", "alternativas": {"A": "Essa investigação não é importante, pois todo quadro depressivo deve ser tratado da mesma forma", "B": "Essa investigação é importante apenas para fins de registro estatístico, sem impacto na conduta", "C": "Essa investigação é importante porque história de mania/hipomania, uso de substâncias e outras condições devem ser avaliadas como diagnóstico diferencial antes de definir o tratamento", "D": "Essa investigação é importante apenas quando o paciente é do sexo masculino"}, "correta": "C", "raciocinio": "Antes de tratar qualquer quadro depressivo, é necessário investigar diagnósticos diferenciais relevantes, entre eles história de episódios de humor elevado (mania/hipomania), uso de substâncias e outras condições clínicas ou medicamentosas. A presença desses dados no caso descrito é justamente o achado que deveria ter orientado uma investigação mais cuidadosa antes da decisão terapêutica inicial.", "porque_correta": "A investigação de história de mania/hipomania, uso de substâncias, condições clínicas e medicamentos é etapa essencial do diagnóstico diferencial em quadros depressivos, pois pode mudar significativamente a abordagem terapêutica indicada — daí a importância de não iniciar tratamento sem essa avaliação prévia.", "erros": {"A": "Incorreta porque quadros depressivos não devem ser tratados de forma padronizada e idêntica; a história pessoal (incluindo possíveis episódios de humor elevado) é essencial para definir corretamente a abordagem terapêutica mais adequada a cada caso.", "B": "Incorreta porque a investigação de diagnóstico diferencial tem impacto direto na conduta terapêutica, e não se resume a uma finalidade estatística ou de registro documental sem repercussão clínica.", "D": "Incorreta porque a necessidade de investigar diagnóstico diferencial em quadros depressivos, incluindo história de mania/hipomania, se aplica a todos os pacientes, independentemente do sexo, sendo uma etapa universal da avaliação clínica adequada."}}, {"id": 28, "tema": "Saúde mental — reconhecimento e conduta em quadro ansioso", "enunciado": "Um paciente relata insônia, preocupação excessiva com múltiplos aspectos da vida, tremores e sensação constante de medo, sem fator desencadeante claro, há vários meses. Qual é a conduta inicial mais adequada na APS?", "alternativas": {"A": "Iniciar apenas investigação laboratorial extensa para causas orgânicas, sem qualquer abordagem dos sintomas relatados", "B": "Orientar que o quadro não necessita de acompanhamento, pois preocupação é normal na vida adulta", "C": "Encaminhar imediatamente para internação, dado o risco de crise de ansiedade", "D": "Caracterizar o quadro ansioso, avaliar impacto funcional, afastar causas orgânicas relevantes e propor plano compartilhado com o paciente"}, "correta": "D", "raciocinio": "O quadro descrito (preocupação excessiva, insônia, tremor, medo persistente por vários meses) é compatível com um transtorno ansioso significativo. O raciocínio correto envolve caracterizar o quadro, avaliar seu impacto funcional, descartar causas orgânicas relevantes quando pertinente, e então construir um plano de cuidado compartilhado — sem banalizar os sintomas nem partir para condutas desproporcionais.", "porque_correta": "A conduta mais adequada combina caracterização clínica completa do quadro ansioso, avaliação de impacto funcional, investigação de causas orgânicas quando pertinente e construção de um plano compartilhado com o paciente, que pode incluir desde orientações e abordagens não farmacológicas até avaliação individualizada para intervenção medicamentosa.", "erros": {"A": "Incorreta porque investigar exclusivamente causas orgânicas, sem qualquer abordagem direta dos sintomas ansiosos relatados, deixa de lado a avaliação clínica do próprio quadro psíquico, que é central para definir o plano de cuidado.", "B": "Incorreta porque, embora preocupações pontuais sejam parte da vida adulta, o quadro descrito — persistente há vários meses, com múltiplos sintomas e sem fator desencadeante claro — ultrapassa o que seria considerado uma reação normal e exige avaliação e acompanhamento.", "C": "Incorreta porque o quadro descrito não apresenta, pelos dados fornecidos, sinais de risco agudo que justifiquem internação; essa é uma conduta desproporcional para um quadro ansioso crônico sem elementos de gravidade extrema relatados."}}, {"id": 29, "tema": "Saúde mental — anedonia e culpa: estratégia da equipe", "enunciado": "Um paciente relata culpa excessiva, falta de vontade de realizar atividades que antes gostava e desânimo persistente há semanas, sem relato espontâneo de ideação suicida. Qual estratégia a equipe de Saúde da Família deve adotar?", "alternativas": {"A": "Reconhecer os sintomas como possível quadro depressivo, aprofundar a avaliação de segurança e organizar um plano de cuidado compartilhado", "B": "Orientar que 'isso passa com o tempo' e agendar retorno apenas se o paciente insistir", "C": "Encaminhar automaticamente para internação psiquiátrica, mesmo sem sinais de risco agudo", "D": "Não investigar mais a fundo, pois anedonia isolada não teria relevância clínica"}, "correta": "A", "raciocinio": "Os sintomas descritos (culpa excessiva, anedonia, desânimo persistente por semanas) formam um conjunto clinicamente relevante, compatível com quadro depressivo, mesmo sem relato espontâneo de ideação suicida — o que reforça a necessidade de investigação ativa de segurança como parte da avaliação, e não elimina a necessidade de manejo cuidadoso.", "porque_correta": "O conjunto de sintomas relatado deve ser reconhecido como possível quadro depressivo, com aprofundamento da avaliação (incluindo investigação ativa de segurança, mesmo sem relato espontâneo de ideação) e construção de plano de cuidado compartilhado, que pode incluir apoio psicossocial, abordagens não farmacológicas e seguimento programado.", "erros": {"B": "Incorreta porque minimizar os sintomas e não organizar seguimento estruturado deixa de reconhecer um quadro clinicamente relevante, adiando um cuidado que poderia evitar agravamento e prejuízo funcional adicional ao paciente.", "C": "Incorreta porque, na ausência de sinais de risco agudo, o encaminhamento automático para internação é desproporcional; a APS pode e deve acolher, avaliar e acompanhar esse tipo de quadro dentro de sua capacidade, articulando a rede apenas quando necessário.", "D": "Incorreta porque anedonia persistente associada a culpa excessiva e desânimo por várias semanas é um conjunto de sintomas clinicamente relevante, que exige investigação mais aprofundada, e não deve ser descartado como algo sem importância."}}, {"id": 30, "tema": "Saúde mental — psicoterapia no plano terapêutico", "enunciado": "Um paciente com transtorno depressivo leve a moderado é encaminhado apenas para uso de medicação, sem que outras abordagens terapêuticas sejam consideradas ou discutidas com ele. O que poderia ter sido acrescentado ao plano terapêutico?", "alternativas": {"A": "Nada poderia ter sido acrescentado, pois a medicação isolada é sempre suficiente e preferencial", "B": "A TCC e outras abordagens psicoterápicas estruturadas poderiam integrar o plano, conforme sintomas e preferências do paciente", "C": "Apenas internação hospitalar deveria ter sido considerada nesse caso", "D": "Nenhuma outra abordagem é validada para transtornos depressivos leves a moderados"}, "correta": "B", "raciocinio": "O plano terapêutico de transtornos depressivos deve ser construído de forma ampla, considerando não apenas a farmacoterapia, mas também abordagens psicoterápicas estruturadas, como a TCC, conforme sintomas, preferências e disponibilidade. Restringir o plano exclusivamente à medicação, sem discutir outras possibilidades com o paciente, é uma limitação do cuidado ofertado.", "porque_correta": "Abordagens psicoterápicas estruturadas, como a TCC, podem e devem integrar o plano terapêutico de transtornos depressivos leves a moderados, conforme os sintomas, as preferências do paciente e a disponibilidade de recursos — o cuidado não deve se restringir apenas à prescrição medicamentosa.", "erros": {"A": "Incorreta porque a medicação isolada não é necessariamente sempre suficiente ou preferencial; a decisão terapêutica deve ser individualizada e pode se beneficiar da combinação com abordagens psicoterápicas, conforme o caso.", "C": "Incorreta porque não há, no caso descrito, elementos que indiquem necessidade de internação hospitalar; trata-se de um quadro leve a moderado, cujo manejo ampliado envolve considerar psicoterapia, não hospitalização.", "D": "Incorreta porque abordagens psicoterápicas estruturadas, como a TCC, são reconhecidamente válidas e frequentemente recomendadas para transtornos depressivos leves a moderados, isoladamente ou em combinação com tratamento medicamentoso."}}, {"id": 31, "tema": "Saúde mental — individualização da decisão medicamentosa", "enunciado": "Dois pacientes com sintomas depressivos semelhantes procuram a unidade. Um médico decide prescrever exatamente a mesma medicação e dose para ambos, 'para simplificar', embora uma das pacientes esteja amamentando e o outro paciente já utilize outro fármaco com risco de interação. Avalie essa conduta.", "alternativas": {"A": "A conduta é adequada, pois padronizar a prescrição reduz erros de prescrição", "B": "A conduta é adequada, desde que a dose escolhida seja a mínima eficaz para ambos", "C": "A conduta é inadequada: a decisão sobre medicação deve ser individualizada, considerando riscos e interações medicamentosas de cada caso", "D": "A conduta só seria inadequada se algum dos pacientes já apresentasse efeito colateral"}, "correta": "C", "raciocinio": "O caso apresenta dois elementos concretos que exigem individualização da prescrição: amamentação (que pode restringir opções medicamentosas) e uso concomitante de fármaco com risco de interação. Ignorar essas diferenças em nome da 'simplicidade' representa um erro de raciocínio clínico que pode gerar dano evitável.", "porque_correta": "A decisão sobre medicação deve sempre ser individualizada, considerando sintomas, riscos, preferências do paciente, interações medicamentosas e necessidade de acompanhamento — exatamente os elementos que diferenciam os dois casos descritos (amamentação e risco de interação) e que tornam a prescrição idêntica inadequada.", "erros": {"A": "Incorreta porque padronizar a prescrição sem considerar diferenças clínicas relevantes entre os pacientes (como amamentação e risco de interação medicamentosa) não reduz erros — na verdade, aumenta o risco de dano evitável.", "B": "Incorreta porque a adequação da dose mínima eficaz não resolve o problema de fundo: mesmo em dose baixa, a medicação escolhida pode não ser apropriada para a paciente que amamenta ou pode interagir com o fármaco já usado pelo outro paciente.", "D": "Incorreta porque a decisão sobre a adequação da prescrição deve ser feita antes da ocorrência de qualquer efeito adverso, com base na avaliação prévia de riscos conhecidos (amamentação, interação medicamentosa), e não apenas reativamente após um dano já ocorrido."}}, {"id": 32, "tema": "Saúde mental — abordagem de hábitos sem culpabilização", "enunciado": "Um paciente com sintomas depressivos leves relata dificuldade para dormir e sedentarismo. O profissional afirma, de forma repreensiva, que 'a culpa é do paciente por não se esforçar o suficiente para mudar de vida.' Avalie essa abordagem.", "alternativas": {"A": "A abordagem foi adequada, pois responsabilizar o paciente tende a aumentar sua motivação", "B": "A abordagem foi inadequada apenas porque deveria ter sido registrada por escrito no prontuário", "C": "A abordagem foi adequada, mas deveria ter sido ainda mais enfática para surtir efeito", "D": "A abordagem foi inadequada por culpabilizar o paciente; o correto é abordar sono, atividade física, rotina e vínculos de forma acolhedora e colaborativa, sem culpabilização"}, "correta": "D", "raciocinio": "A abordagem de hábitos de vida (sono, atividade física, rotina) em quadros depressivos deve ser feita de forma acolhedora e colaborativa, reconhecendo que a própria condição depressiva frequentemente dificulta a mudança de hábitos. Atribuir a dificuldade exclusivamente a falta de esforço do paciente é uma culpabilização que contraria esse princípio e pode prejudicar o vínculo terapêutico.", "porque_correta": "A abordagem de hábitos e suporte em quadros depressivos deve ocorrer de forma acolhedora e colaborativa, sem culpabilização, reconhecendo que sono, atividade física e rotina são construídos junto ao paciente e não impostos como cobrança — a fala descrita no caso vai exatamente contra esse princípio.", "erros": {"A": "Incorreta porque culpabilizar o paciente tende a reduzir sua motivação e a piorar sentimentos já presentes de culpa e desvalia, característicos de quadros depressivos, em vez de auxiliar na mudança de hábitos.", "B": "Incorreta porque o problema central não é a ausência de registro escrito da fala, mas o próprio conteúdo culpabilizante da abordagem, que é inadequado independentemente de ser documentado ou não.", "C": "Incorreta porque intensificar uma abordagem culpabilizante pioraria, e não melhoraria, o problema identificado; o caminho correto é justamente o oposto — uma abordagem mais acolhedora e colaborativa, não mais enfática na cobrança."}}, {"id": 33, "tema": "Saúde mental — RAPS e nível de cuidado conforme gravidade", "enunciado": "Um paciente com transtorno mental comum, sem sinais de risco agudo, procura a UBS. Sem avaliação detalhada, a equipe já o encaminha automaticamente ao CAPS, 'para não errar'. Avalie essa conduta.", "alternativas": {"A": "A conduta não é necessariamente correta: a APS pode acolher, acompanhar e tratar quadros compatíveis com sua capacidade, e a articulação com o CAPS deve considerar gravidade e necessidade, não ser automática", "B": "A conduta é correta, pois todo caso de saúde mental deve ser manejado exclusivamente por serviços especializados", "C": "A conduta é correta, pois a APS nunca deve tratar questões relacionadas à saúde mental", "D": "A conduta é incorreta, pois nenhum caso deveria ser encaminhado ao CAPS, independentemente da gravidade"}, "correta": "A", "raciocinio": "O raciocínio correto reconhece que a APS tem capacidade e responsabilidade de acolher e tratar quadros de saúde mental compatíveis com sua complexidade, e que a articulação com o CAPS e a rede especializada deve ser proporcional à gravidade e à necessidade identificadas — não uma conduta automática 'por precaução', o que também sobrecarrega desnecessariamente a rede especializada.", "porque_correta": "A organização da rede de atenção psicossocial prevê que a APS acolha, acompanhe e trate quadros compatíveis com sua capacidade, articulando o cuidado com o CAPS e outros pontos da rede conforme gravidade, necessidade, território e disponibilidade — e não de forma automática para todo caso, independentemente de sua complexidade.", "erros": {"B": "Incorreta porque a APS tem papel ativo e reconhecido no manejo de transtornos mentais comuns, não sendo verdade que todo caso deva ser necessariamente manejado por serviços especializados como o CAPS.", "C": "Incorreta porque a saúde mental é parte constitutiva do cuidado prestado na APS, que deve realizar avaliação inicial, manejo de quadros compatíveis com sua capacidade e articulação com a rede quando necessário — não uma exclusão total do tema.", "D": "Incorreta porque o encaminhamento ao CAPS é adequado e necessário em determinadas situações, conforme gravidade e necessidade do caso; o problema apontado no enunciado não é o encaminhamento em si, mas sua realização de forma automática, sem avaliação prévia."}}, {"id": 34, "tema": "Política Nacional de Saúde Mental e organização da RAPS", "enunciado": "Durante uma discussão em equipe, um profissional afirma: 'A internação em hospital psiquiátrico deve ser sempre a primeira opção diante de qualquer transtorno mental, pois garante segurança total; CAPS e centros de convivência servem apenas como apoio complementar após a alta.' Avalie essa afirmação.", "alternativas": {"A": "A afirmação está correta, pois a hospitalização sempre reduz riscos de forma mais eficaz que outras estratégias", "B": "A afirmação está incorreta: a rede prioriza o cuidado em liberdade e a menor restrição necessária; a internação é indicada conforme o caso, não uma hierarquia fixa", "C": "A afirmação está correta apenas para pacientes sem qualquer rede de apoio familiar disponível", "D": "A afirmação está incorreta apenas porque centros de convivência não fariam parte da rede de saúde mental"}, "correta": "B", "raciocinio": "A afirmação analisada propõe uma hierarquia fixa e equivocada, colocando a internação como sempre a primeira opção. O raciocínio correto reconhece que a rede de atenção psicossocial é organizada de forma articulada, priorizando o cuidado em liberdade e a menor restrição necessária, com a internação reservada para quando clinicamente indicada — e não como ponto de partida universal.", "porque_correta": "A rede de atenção psicossocial prioriza o cuidado em liberdade e a menor restrição necessária; a internação deve ser considerada quando clinicamente indicada, não como primeira opção universal, e CAPS, centros de convivência e leitos hospitalares são componentes articulados de uma mesma rede, não uma hierarquia rígida com a internação no topo.", "erros": {"A": "Incorreta porque a hospitalização não é, por definição, sempre a estratégia mais eficaz ou segura; a rede de saúde mental prioriza formas de cuidado menos restritivas sempre que compatíveis com a segurança do paciente, reservando a internação para situações clinicamente indicadas.", "C": "Incorreta porque a adequação da internação como primeira opção não depende da existência de rede de apoio familiar; o princípio de priorizar o cuidado em liberdade e a menor restrição necessária se aplica de forma mais ampla, buscando fortalecer redes de apoio sempre que possível.", "D": "Incorreta porque o principal equívoco da afirmação original não está em excluir os centros de convivência da rede — eles de fato fazem parte dela —, mas em propor uma hierarquia fixa que coloca a internação como sempre a primeira opção."}}, {"id": 35, "tema": "Adolescência — consulta a sós e autonomia progressiva", "enunciado": "Uma adolescente de 15 anos comparece sozinha à UBS, relata início da vida sexual e solicita orientação sobre métodos contraceptivos, pedindo explicitamente que os pais não sejam informados. Qual é a conduta mais adequada?", "alternativas": {"A": "O atendimento deve ser recusado até que um responsável legal esteja presente, por se tratar de menor de idade", "B": "Os pais devem ser informados imediatamente, independentemente do desejo da adolescente, por se tratar de menor de 18 anos", "C": "A adolescente deve ser acolhida a sós, com orientação não julgadora sobre métodos contraceptivos e prevenção de IST, respeitando sua autonomia progressiva e o sigilo, salvo situações que exijam sua quebra para proteção dela mesma", "D": "A orientação deve ser apenas verbal, sem fornecimento de qualquer método, até que a adolescente complete 16 anos"}, "correta": "C", "raciocinio": "A atenção à saúde do adolescente pressupõe acolhimento a sós, com explicação dos limites do sigilo desde o início, e respeito à autonomia progressiva conforme maturidade e compreensão da adolescente. Diante de uma solicitação de orientação contraceptiva, sem sinais de risco que justifiquem quebra de sigilo, a conduta adequada é acolher, orientar e respeitar a confidencialidade solicitada.", "porque_correta": "A adolescente deve ser acolhida a sós, com orientação não julgadora sobre métodos contraceptivos disponíveis e prevenção de IST, respeitando sua autonomia progressiva e o sigilo da consulta — o sigilo só deve ser quebrado diante de risco relevante que justifique tal medida para proteção da própria adolescente.", "erros": {"A": "Incorreta porque recusar o atendimento até a presença de um responsável legal contraria o princípio de acolhimento a sós e autonomia progressiva na atenção à saúde do adolescente, podendo inclusive afastar a adolescente do serviço de saúde em um momento de busca por orientação importante.", "B": "Incorreta porque informar os pais de forma automática e sem que haja indicação de risco relevante contraria o princípio de sigilo na consulta do adolescente, que deve ser respeitado salvo diante de situações específicas que exijam sua quebra para proteção da adolescente.", "D": "Incorreta porque restringir a orientação a informações apenas verbais, sem fornecimento do método, com base unicamente na idade, contraria o princípio de autonomia progressiva e o direito à saúde sexual e reprodutiva já reconhecido para adolescentes nesse contexto."}}, {"id": 36, "tema": "Adolescência — limites do sigilo diante de risco", "enunciado": "Durante o acompanhamento, a mesma adolescente revela estar em um relacionamento no qual sofre agressões físicas frequentes por parte do parceiro. Como esse novo dado deve impactar a conduta quanto ao sigilo?", "alternativas": {"A": "O sigilo deve ser mantido de forma absoluta, independentemente do relato de violência", "B": "O sigilo só pode ser quebrado se a própria adolescente autorizar expressamente", "C": "A situação não modifica a conduta anterior, pois a queixa inicial sobre contracepção já havia sido resolvida", "D": "Diante de risco relevante à integridade da adolescente, o sigilo pode e deve ser quebrado, de forma explicada a ela, para viabilizar proteção adequada"}, "correta": "D", "raciocinio": "O novo dado (violência física frequente por parte do parceiro) muda substancialmente o cenário: passa a existir risco relevante à integridade da adolescente, o que justifica a quebra do sigilo, sempre de forma explicada a ela, para viabilizar as medidas de proteção necessárias — diferente da situação anterior, em que não havia elementos de risco.", "porque_correta": "Diante de risco relevante à integridade da adolescente, como no caso de violência física frequente, o sigilo pode e deve ser quebrado, sempre explicando à adolescente o motivo dessa decisão, para viabilizar a proteção adequada diante da situação identificada.", "erros": {"A": "Incorreta porque o princípio de proteção diante de risco relevante se sobrepõe à manutenção absoluta do sigilo; situações de violência que colocam a integridade da adolescente em risco justificam a quebra do sigilo, conforme previsto nos próprios limites dessa confidencialidade.", "B": "Incorreta porque, em situações de risco relevante, a quebra do sigilo pode ser necessária mesmo sem autorização expressa da adolescente, exatamente para viabilizar a proteção dela diante de uma situação que ela pode não conseguir resolver sozinha.", "C": "Incorreta porque o surgimento de um novo dado clínico relevante (violência física) deve necessariamente ser incorporado à condução do caso, não podendo ser desconsiderado apenas porque a queixa inicial (contracepção) já havia sido abordada em consulta anterior."}}, {"id": 37, "tema": "Adolescência — orientação não julgadora", "enunciado": "Ao atender outra adolescente com queixa semelhante, um profissional demonstra desaprovação verbal ('você é muito nova para isso') antes de fornecer qualquer orientação sobre saúde sexual. Qual é o problema dessa abordagem?", "alternativas": {"A": "A abordagem é inadequada: a orientação deve ser não julgadora, informando sobre métodos disponíveis e prevenção de IST, sem juízos de valor que possam afastar a adolescente do serviço", "B": "Não há problema, pois alertar sobre a idade é uma forma legítima de proteção", "C": "O problema está apenas no tom de voz utilizado, já que o conteúdo da frase está correto", "D": "A abordagem é adequada, desde que seja seguida de orientação técnica correta na sequência"}, "correta": "A", "raciocinio": "A atenção à saúde sexual do adolescente deve ser conduzida de forma não julgadora, com foco na orientação técnica e no vínculo de confiança. Um comentário de desaprovação, independentemente da orientação técnica que venha em seguida, compromete esse princípio e pode afastar a adolescente de buscar cuidado no futuro.", "porque_correta": "A orientação à saúde sexual do adolescente deve ser não julgadora, com foco em informação sobre métodos disponíveis e prevenção de IST; comentários de desaprovação comprometem o vínculo de confiança e podem afastar a adolescente do serviço, mesmo que a informação técnica seja correta.", "erros": {"B": "Incorreta porque um comentário de desaprovação verbal não constitui uma forma legítima ou eficaz de proteção; pelo contrário, pode afastar a adolescente do serviço de saúde, reduzindo o acesso a informações e cuidados importantes para sua proteção real.", "C": "Incorreta porque o problema não está apenas na forma (tom de voz), mas no próprio conteúdo da fala, que expressa julgamento moral sobre a vida sexual da adolescente — algo que contraria o princípio de orientação não julgadora, independentemente do tom utilizado.", "D": "Incorreta porque o dano ao vínculo de confiança causado pelo comentário de desaprovação inicial não é anulado por uma orientação técnica correta na sequência; o princípio de acolhimento não julgador deve permear toda a consulta, desde o início."}}, {"id": 38, "tema": "Adolescência — autonomia progressiva em decisões de saúde", "enunciado": "Um adolescente de 16 anos, com boa compreensão sobre sua condição de saúde crônica, deseja participar ativamente das decisões sobre seu tratamento, mas os pais preferem decidir por ele 'para não preocupá-lo'. Qual conduta é mais alinhada ao princípio da autonomia progressiva?", "alternativas": {"A": "A decisão deve caber sempre exclusivamente aos pais, independentemente da maturidade do adolescente", "B": "A maturidade, a compreensão e a participação do adolescente nas decisões devem ser consideradas, incluindo-o ativamente no processo, sem excluir o diálogo com a família", "C": "A decisão deve caber sempre exclusivamente ao adolescente, ignorando totalmente a opinião dos pais", "D": "Menores de 18 anos não devem participar de nenhuma decisão sobre o próprio tratamento"}, "correta": "B", "raciocinio": "O princípio de autonomia progressiva reconhece que a capacidade de participação do adolescente nas decisões sobre sua saúde aumenta conforme sua maturidade e compreensão — não sendo, portanto, nem uma exclusão total do adolescente nem uma exclusão total da família, mas uma inclusão equilibrada e proporcional à capacidade demonstrada.", "porque_correta": "A autonomia progressiva pressupõe considerar a maturidade, a compreensão e a participação do adolescente nas decisões sobre sua própria saúde, incluindo-o ativamente no processo decisório, sem que isso signifique excluir totalmente o diálogo com a família — um equilíbrio, e não um extremo.", "erros": {"A": "Incorreta porque desconsiderar totalmente a maturidade e a compreensão demonstradas pelo adolescente contraria diretamente o princípio de autonomia progressiva, que reconhece sua capacidade crescente de participar das decisões sobre a própria saúde.", "C": "Incorreta porque excluir totalmente a opinião da família também não representa o equilíbrio proposto pela autonomia progressiva, que busca incluir o adolescente no processo decisório sem necessariamente eliminar o diálogo familiar.", "D": "Incorreta porque a autonomia progressiva reconhece exatamente o oposto: que adolescentes, conforme sua maturidade e compreensão, devem ser incluídos nas decisões sobre o próprio tratamento, e não excluídos por completo apenas em razão da idade."}}, {"id": 39, "tema": "Desenvolvimento infantil — marcos aos 6 meses", "enunciado": "Uma mãe leva uma criança de 6 meses à consulta de puericultura de rotina. Ao exame, a criança sustenta bem a cabeça, rola do decúbito ventral para o dorsal e vice-versa, leva objetos à boca e emite sons de balbucio, mas ainda não senta sem apoio. Qual é a interpretação mais adequada?", "alternativas": {"A": "O desenvolvimento está atrasado, pois toda criança de 6 meses já deveria sentar sem apoio", "B": "É obrigatório encaminhamento imediato a neurologista, independentemente do restante do exame", "C": "O desenvolvimento é compatível com a faixa etária esperada aos 6 meses; sentar sem apoio costuma se consolidar um pouco mais adiante, e os demais marcos observados são adequados", "D": "A criança deveria estar andando com apoio nessa idade, o que indicaria atraso grave"}, "correta": "C", "raciocinio": "É necessário confrontar os marcos observados (controle cefálico, rolar em ambas as direções, levar objetos à boca, balbucio) com o que é esperado para a faixa etária de 6 meses, e reconhecer que sentar sem apoio é um marco que tipicamente se consolida um pouco mais à frente, não sendo, isoladamente, sinal de atraso nessa idade.", "porque_correta": "O conjunto de marcos observado (controle cefálico, rolar nas duas direções, levar objetos à boca, balbucio) é compatível com o desenvolvimento esperado aos 6 meses; a ausência de sentar sem apoio, isoladamente e nessa idade, não caracteriza atraso, pois esse marco costuma se consolidar em momento um pouco posterior.", "erros": {"A": "Incorreta porque sentar sem apoio de forma plena costuma se consolidar um pouco além dos 6 meses; exigir esse marco exatamente nessa idade, isoladamente, superestima o ritmo esperado de desenvolvimento típico.", "B": "Incorreta porque o conjunto de achados descritos é compatível com desenvolvimento típico para a idade, não havendo elementos no caso que justifiquem encaminhamento imediato e obrigatório a neurologista.", "D": "Incorreta porque andar com apoio é um marco esperado bem mais adiante no desenvolvimento motor (por volta do final do primeiro ano de vida), não sendo exigível de uma criança de 6 meses; cobrar esse marco nessa idade não tem respaldo no desenvolvimento típico."}}, {"id": 40, "tema": "Desenvolvimento infantil — avaliação de possível atraso", "enunciado": "Uma criança de 3 anos e 3 meses, sem comorbidades conhecidas, é trazida à UBS porque a mãe relata que ela fala poucas palavras, tem dificuldade de interação com outras crianças e ainda não corre com boa coordenação. Qual a conduta mais adequada?", "alternativas": {"A": "Tranquilizar a mãe sem qualquer avaliação estruturada, pois 'cada criança tem seu tempo'", "B": "Aguardar até os 5 anos para reavaliar, pois antes dessa idade não haveria intervenção possível", "C": "Encaminhar diretamente para internação, independentemente da gravidade do quadro relatado", "D": "Realizar avaliação estruturada do desenvolvimento, verificar sinais de alerta em múltiplos domínios e encaminhar para avaliação especializada"}, "correta": "D", "raciocinio": "A queixa envolve potencial atraso em múltiplos domínios do desenvolvimento (linguagem, interação social e coordenação motora) — um padrão que, segundo os próprios sinais de alerta discutidos na vigilância do desenvolvimento, justifica avaliação estruturada e encaminhamento para investigação especializada, sem demora desnecessária, já que a intervenção precoce é mais efetiva quanto antes iniciada.", "porque_correta": "Diante de queixas envolvendo múltiplos domínios do desenvolvimento, a conduta correta é realizar avaliação estruturada, identificar sinais de alerta e organizar encaminhamento para avaliação especializada e intervenção precoce quando indicado, sem aguardar desnecessariamente, pois a precocidade da intervenção está associada a melhores resultados.", "erros": {"A": "Incorreta porque tranquilizar a mãe sem qualquer avaliação estruturada, diante de uma queixa envolvendo múltiplos domínios do desenvolvimento (linguagem, interação social, coordenação motora), pode postergar uma intervenção precoce potencialmente benéfica para a criança.", "B": "Incorreta porque aguardar até os 5 anos contraria diretamente o princípio de intervenção precoce, que preconiza encaminhar e iniciar estímulos adequados assim que sinais de alerta são identificados, sem esperar desnecessariamente.", "C": "Incorreta porque não há, nos dados do caso, elementos que justifiquem uma internação; a conduta adequada envolve avaliação ambulatorial estruturada e encaminhamento especializado, não uma medida hospitalar desproporcional ao quadro descrito."}}, {"id": 41, "tema": "Vigilância do desenvolvimento — marcos como referência", "enunciado": "Ao notar que uma criança atingiu um marco de desenvolvimento poucas semanas após a média esperada, mas com evolução progressiva e sem outros sinais de alerta, um profissional já a classifica como portadora de 'atraso grave' e a encaminha com urgência máxima. Essa conduta está correta?", "alternativas": {"A": "Não necessariamente: os marcos são referências, com variação individual esperada; deve-se avaliar o conjunto de habilidades e a evolução", "B": "Sim, qualquer variação em relação à média já indica atraso grave que exige urgência máxima", "C": "Sim, pois toda criança deve atingir os marcos exatamente na média, sem qualquer variação", "D": "Não, porque marcos de desenvolvimento não teriam nenhuma utilidade clínica"}, "correta": "A", "raciocinio": "É necessário lembrar que os marcos de desenvolvimento são referências populacionais, e não pontos fixos que toda criança deve atingir exatamente na mesma semana. Uma pequena variação, associada a evolução progressiva e ausência de outros sinais de alerta, não caracteriza atraso grave — o raciocínio correto avalia o conjunto de habilidades e a trajetória, não um único marco isolado.", "porque_correta": "Os marcos de desenvolvimento são referências que admitem variação individual esperada; a avaliação clínica adequada considera o conjunto de habilidades, a evolução ao longo do tempo e o contexto da criança, não devendo classificar uma variação pontual e isolada, sem outros sinais de alerta, como atraso grave.", "erros": {"B": "Incorreta porque nem toda variação em relação à média representa atraso grave; a vigilância do desenvolvimento reconhece explicitamente a existência de variação individual esperada entre crianças com desenvolvimento típico.", "C": "Incorreta porque não existe expectativa realista de que toda criança atinja marcos exatamente na média populacional; alguma variação individual é esperada e normal dentro do desenvolvimento típico.", "D": "Incorreta porque os marcos de desenvolvimento têm, sim, grande utilidade clínica como referência para identificar sinais de alerta reais (como atraso em múltiplos domínios ou regressão), desde que interpretados corretamente, considerando o conjunto e não um ponto isolado."}}, {"id": 42, "tema": "Desenvolvimento infantil — sinais de alerta (regressão)", "enunciado": "Durante consultas seriadas de puericultura, uma criança que já falava frases curtas passa a não falar mais nenhuma palavra, além de apresentar perda de habilidades sociais que antes possuía. Como esse achado deve ser interpretado?", "alternativas": {"A": "Deve ser interpretado como variação normal do desenvolvimento, sem necessidade de investigação", "B": "Deve ser interpretado como sinal de alerta relevante — regressão de habilidades previamente adquiridas —, exigindo avaliação e encaminhamento para investigação especializada", "C": "Deve ser investigado apenas se a criança tiver mais de 5 anos de idade", "D": "Deve ser interpretado apenas como indicação de reforço escolar, sem necessidade de avaliação em saúde"}, "correta": "B", "raciocinio": "O elemento central deste caso é a perda de habilidades já adquiridas (linguagem e habilidades sociais), o que caracteriza regressão — um dos sinais de alerta mais relevantes na vigilância do desenvolvimento infantil, distinto de uma simples variação de ritmo, e que exige avaliação e investigação especializada sem demora.", "porque_correta": "A regressão de habilidades previamente adquiridas — como perda de linguagem já estabelecida e de habilidades sociais — é um sinal de alerta relevante na vigilância do desenvolvimento infantil, que exige avaliação e encaminhamento para investigação especializada, diferentemente de uma simples variação de ritmo entre marcos.", "erros": {"A": "Incorreta porque regressão de habilidades já adquiridas não é considerada variação normal do desenvolvimento; trata-se de um sinal de alerta específico e relevante, diferente da variação individual de ritmo entre crianças com desenvolvimento típico.", "C": "Incorreta porque a regressão de habilidades deve ser investigada assim que identificada, independentemente da idade da criança; não há justificativa para restringir a investigação apenas a crianças acima de determinada faixa etária.", "D": "Incorreta porque a regressão de habilidades de linguagem e sociais é um achado clínico relevante que exige avaliação em saúde e investigação especializada, e não pode ser reduzida a uma simples questão de reforço escolar."}}, {"id": 43, "tema": "Antropometria — escore-z e déficit nutricional", "enunciado": "Uma criança tem seu índice peso/idade avaliado, resultando em escore-z de -2,5, ou seja, 2,5 desvios-padrão abaixo da média da população de referência para idade e sexo. Qual é a interpretação correta desse achado?", "alternativas": {"A": "O valor está dentro da normalidade, pois pequenas variações abaixo da média são esperadas", "B": "Esse valor indica excesso de peso, e não déficit nutricional", "C": "Um escore-z abaixo de -2 desvios-padrão indica déficit nutricional, exigindo avaliação e intervenção adequadas", "D": "O escore-z só teria relevância clínica quando o valor fosse positivo, e não negativo"}, "correta": "C", "raciocinio": "É necessário aplicar corretamente o critério de interpretação do escore-z: valores abaixo de -2 desvios-padrão da média de referência indicam déficit nutricional. Como o caso apresenta um escore-z de -2,5 (abaixo do limiar de -2), o achado é compatível com déficit nutricional e exige avaliação e intervenção nutricional adequadas, não podendo ser interpretado como variação normal.", "porque_correta": "O critério de interpretação antropométrica estabelece que um escore-z abaixo de -2 desvios-padrão da média da população de referência para idade e sexo indica déficit nutricional; como o caso apresenta -2,5, o achado é compatível com déficit e exige avaliação e intervenção.", "erros": {"A": "Incorreta porque um escore-z de -2,5 ultrapassa o limiar de -2 desvios-padrão estabelecido como ponto de corte para déficit nutricional; não se trata, portanto, de uma pequena variação dentro da normalidade, mas de um achado que exige atenção clínica.", "B": "Incorreta porque um escore-z negativo indica valor abaixo da média de referência, e não excesso; excesso de peso seria representado por um escore-z positivo elevado, o oposto do que é descrito no caso.", "D": "Incorreta porque o escore-z é clinicamente relevante tanto em valores positivos (que podem indicar excesso de peso, conforme o índice avaliado) quanto em valores negativos abaixo do limiar de referência (que indicam déficit), como no caso descrito."}}, {"id": 44, "tema": "Antropometria — déficit crônico x agudo", "enunciado": "A criança 1 apresenta escore-z de peso/estatura normal, mas escore-z de estatura/idade abaixo de -2; a criança 2 apresenta escore-z de peso/estatura abaixo de -2, com estatura/idade normal. Qual é a interpretação mais adequada?", "alternativas": {"A": "Ambas as crianças apresentam exatamente o mesmo tipo de déficit nutricional", "B": "Nenhuma das duas crianças apresenta déficit nutricional, pois em cada caso pelo menos um índice está normal", "C": "A criança 2 tem déficit crônico e a criança 1 tem déficit agudo", "D": "A criança 1 apresenta padrão de déficit crônico (estatura/idade baixa); a criança 2, padrão de déficit agudo (peso/estatura baixo)"}, "correta": "D", "raciocinio": "É necessário associar corretamente cada índice antropométrico ao tipo de déficit que ele reflete: a estatura/idade comprometida reflete um processo mais prolongado (déficit crônico, ou retardo de crescimento linear), enquanto o peso/estatura comprometido reflete perda de massa mais recente (déficit agudo). Aplicando isso aos dois casos, a criança 1 (estatura/idade baixa) tem padrão de déficit crônico, e a criança 2 (peso/estatura baixo) tem padrão de déficit agudo.", "porque_correta": "A estatura/idade comprometida identifica déficit nutricional crônico (retardo de crescimento linear acumulado ao longo do tempo), enquanto o peso/estatura comprometido identifica déficit agudo (perda de massa mais recente); por isso, a criança 1 tem padrão crônico e a criança 2 tem padrão agudo — direcionando abordagens diferentes para cada caso.", "erros": {"A": "Incorreta porque os dois índices comprometidos são diferentes entre as crianças (estatura/idade na criança 1, peso/estatura na criança 2), refletindo tipos distintos de déficit nutricional — crônico e agudo, respectivamente — e não o mesmo padrão.", "B": "Incorreta porque um escore-z abaixo de -2 em qualquer um dos índices já indica déficit nutricional relevante naquele domínio específico, mesmo que outro índice esteja normal; não é necessário que todos os índices estejam alterados para caracterizar déficit.", "C": "Incorreta porque inverte a associação correta entre os índices e o tipo de déficit: é a criança 1 (estatura/idade baixa) que tem padrão de déficit crônico, e a criança 2 (peso/estatura baixo) que tem padrão de déficit agudo — o oposto do proposto na alternativa."}}, {"id": 45, "tema": "Cuidado intercultural — autonomia informada x abandono", "enunciado": "Uma equipe de saúde atende uma família indígena que utiliza práticas tradicionais de cuidado para uma criança com quadro febril persistente. Um profissional entende que 'respeitar a cultura' significa não abordar o caso de forma alguma, deixando a família decidir sozinha, sem qualquer diálogo ou informação sobre riscos. Essa interpretação está correta?", "alternativas": {"A": "Essa interpretação não está totalmente correta: respeitar a autonomia envolve informar riscos e alternativas de modo compreensível e apoiar uma decisão informada, sem impor condutas; a ausência total de diálogo pode comprometer a segurança sem, de fato, expressar respeito genuíno", "B": "Essa interpretação está correta: respeitar a cultura significa não intervir nem informar sobre riscos, deixando a família completamente livre", "C": "Essa interpretação está incorreta porque a equipe deveria impor a conduta biomédica, independentemente da vontade da família", "D": "Essa interpretação está correta, mas apenas para famílias indígenas; para as demais, a informação sobre riscos seria sempre obrigatória"}, "correta": "A", "raciocinio": "É preciso diferenciar respeito à autonomia de ausência total de cuidado. Respeitar a cultura e a autonomia da família não significa deixar de informar riscos e alternativas de forma compreensível; significa fazer isso sem impor condutas, apoiando uma decisão verdadeiramente informada — o que é diferente de simplesmente não dialogar.", "porque_correta": "O cuidado culturalmente seguro envolve informar riscos e alternativas de modo compreensível e apoiar a decisão informada da família, sem impor condutas — a ausência completa de diálogo, sob o pretexto de 'respeito', na verdade compromete a segurança clínica sem expressar respeito genuíno à autonomia, que pressupõe informação.", "erros": {"B": "Incorreta porque respeito à cultura não equivale a ausência de qualquer diálogo ou informação sobre riscos; a autonomia informada pressupõe que a família receba informações compreensíveis para poder decidir de forma genuinamente livre e consciente.", "C": "Incorreta porque impor a conduta biomédica independentemente da vontade da família também não é a abordagem adequada; o cuidado culturalmente seguro busca negociação e decisão compartilhada, não imposição em nenhuma das direções.", "D": "Incorreta porque o princípio de informar riscos e alternativas de modo compreensível para apoiar decisão informada se aplica a todas as famílias, não sendo um padrão exclusivo para famílias não indígenas nem dispensável para famílias indígenas."}}, {"id": 46, "tema": "Cuidado intercultural — negociação do plano de cuidado", "enunciado": "Uma família indígena aceita algumas orientações da equipe de saúde, mas deseja manter também práticas tradicionais de cuidado. Um profissional insiste que a família abandone completamente as práticas tradicionais, sob risco de 'não continuar o acompanhamento'. Qual é a conduta mais adequada?", "alternativas": {"A": "A suspensão total das práticas tradicionais deve ser imposta como condição para manter o acompanhamento", "B": "A equipe deve construir, junto à família, um plano de cuidado compartilhado que combine segurança clínica e respeito às práticas culturais", "C": "O acompanhamento da equipe de saúde deve ser suspenso definitivamente, transferindo toda a responsabilidade à família", "D": "As práticas tradicionais devem ser ignoradas no plano de cuidado, por serem consideradas irrelevantes"}, "correta": "B", "raciocinio": "O cuidado culturalmente seguro busca a construção compartilhada do plano de cuidado, combinando segurança clínica e respeito às práticas culturais da família, por meio de negociação — e não a imposição de condições excludentes que forcem a família a escolher entre o acompanhamento da equipe e suas práticas tradicionais.", "porque_correta": "A conduta adequada envolve negociar um plano de cuidado compartilhado com a família (e, quando desejado, com agentes tradicionais), combinando segurança clínica e respeito às práticas culturais, sem impor condições excludentes que forcem a família a abandonar completamente suas práticas para manter o acompanhamento.", "erros": {"A": "Incorreta porque impor a suspensão total das práticas tradicionais como condição para manter o acompanhamento contraria o princípio de negociação e construção compartilhada do plano de cuidado, além de poder afastar a família do serviço de saúde.", "C": "Incorreta porque suspender definitivamente o acompanhamento, diante de uma família que já aceita parte das orientações da equipe, representa abandono do cuidado, e não uma solução para o impasse relatado no caso.", "D": "Incorreta porque ignorar completamente as práticas tradicionais no plano de cuidado, tratando-as como irrelevantes, contraria o princípio de cuidado culturalmente seguro, que busca justamente incorporar e negociar essas práticas junto ao plano clínico."}}, {"id": 47, "tema": "Cuidado intercultural — segurança clínica sem coerção", "enunciado": "Uma equipe acompanha uma família indígena que optou por manter certas práticas tradicionais associadas ao cuidado de uma criança. A equipe deseja garantir segurança clínica sem desrespeitar a decisão da família. Qual estratégia é mais compatível com esse objetivo?", "alternativas": {"A": "A equipe deve acionar medidas para forçar a adesão exclusiva ao tratamento biomédico, independentemente do contexto", "B": "A equipe não deve estabelecer qualquer critério de acompanhamento, deixando toda a responsabilidade com a família", "C": "A equipe deve combinar com a família sinais de alarme que indiquem necessidade de reavaliação imediata, manter monitoramento acessível e garantir acesso oportuno, sem recorrer à coerção automática", "D": "A equipe deve recusar-se a atender a criança enquanto a família mantiver qualquer prática tradicional"}, "correta": "C", "raciocinio": "É preciso equilibrar dois objetivos aparentemente em tensão: garantir segurança clínica e respeitar a decisão da família. A estratégia que atinge ambos é combinar previamente sinais de alarme que exijam reavaliação, manter monitoramento acessível e garantir acesso oportuno ao serviço, sem recorrer à coerção — diferente tanto da imposição quanto do abandono total do acompanhamento.", "porque_correta": "A estratégia mais compatível com segurança clínica e respeito à decisão da família envolve combinar sinais de alarme que indiquem necessidade de reavaliação imediata, manter monitoramento acessível e garantir acesso oportuno ao serviço, sem recorrer à coerção automática — um equilíbrio entre cuidado e respeito à autonomia.", "erros": {"A": "Incorreta porque forçar a adesão exclusiva ao tratamento biomédico, independentemente do contexto, representa coerção, contrariando o princípio de cuidado culturalmente seguro sem coerção automática, que busca outras formas de garantir segurança.", "B": "Incorreta porque a ausência total de critérios de acompanhamento abandona a responsabilidade de monitoramento da equipe, que deve permanecer acessível e atenta a sinais de alarme, mesmo respeitando a decisão da família quanto às práticas tradicionais.", "D": "Incorreta porque recusar o atendimento enquanto a família mantiver qualquer prática tradicional é uma forma de coerção indireta que pode afastar a família do serviço de saúde, contrariando o princípio de acesso oportuno e cuidado culturalmente seguro."}}, {"id": 48, "tema": "Síntese — território, vulnerabilidade e abordagem familiar", "enunciado": "Uma família vive em território de alta vulnerabilidade social. O genograma mostra conflito entre um adolescente e o padrasto, e o ecomapa mostra isolamento, com poucas conexões externas. A equipe também percebe aumento de comorbidades crônicas na comunidade e identifica, na mesma família, uma adolescente buscando orientação contraceptiva. Qual abordagem reflete melhor a integração desses elementos?", "alternativas": {"A": "Cada demanda deve ser tratada isoladamente, em consultas totalmente independentes, sem qualquer conexão entre os achados", "B": "Toda a família deve ser encaminhada exclusivamente para acompanhamento hospitalar, dada a complexidade do caso", "C": "O contexto familiar e comunitário deve ser ignorado, focando-se apenas na queixa mais recente apresentada", "D": "O conhecimento do território, do genograma e do ecomapa deve ser integrado num plano de cuidado compartilhado, articulando a adolescente, as comorbidades e a rede de apoio"}, "correta": "D", "raciocinio": "O caso reúne múltiplos elementos que, isoladamente, já foram trabalhados em questões anteriores: vulnerabilidade territorial, leitura de genograma e ecomapa, comorbidades emergentes na comunidade e atenção à adolescente. O raciocínio de síntese exige reconhecer que esses elementos não são independentes, mas compõem um mesmo contexto familiar e territorial, que deve orientar um plano de cuidado integrado — e não abordagens fragmentadas ou desproporcionais.", "porque_correta": "A abordagem mais adequada integra o conhecimento do território, do genograma e do ecomapa para compreender o contexto completo da família, articulando de forma coordenada o cuidado à adolescente (com autonomia e sigilo preservados), a atenção às comorbidades emergentes na comunidade e o fortalecimento da rede de apoio da família, dentro de um plano de cuidado compartilhado e continuado — a essência do raciocínio integrado em MFC.", "erros": {"A": "Incorreta porque tratar cada demanda de forma totalmente isolada ignora justamente a riqueza do raciocínio em MFC, que busca compreender a pessoa e a família dentro de seu contexto territorial, familiar e comunitário, e não de forma fragmentada.", "B": "Incorreta porque não há, no caso descrito, elementos que indiquem necessidade de internação hospitalar para a família; trata-se de um conjunto de questões que podem e devem ser manejadas na própria APS, de forma integrada e continuada.", "C": "Incorreta porque ignorar o contexto familiar e comunitário contraria diretamente os princípios da abordagem familiar e territorial em MFC, que orientam justamente a considerar esses elementos para compreender e cuidar melhor da pessoa."}}, {"id": 49, "tema": "Síntese — saúde mental, adolescência e confidencialidade", "enunciado": "Uma adolescente de 15 anos, acompanhada por quadro de ansiedade e insônia, revela durante consulta a sós que iniciou vida sexual recentemente e teme conversar com os pais sobre o assunto; não relata ideação suicida nem outros sinais de risco imediato. Qual conduta integra corretamente os princípios envolvidos?", "alternativas": {"A": "O sigilo deve ser mantido, pois não há risco relevante que justifique sua quebra; o quadro ansioso deve ser acompanhado e a orientação sexual deve ser não julgadora", "B": "Os pais devem ser informados imediatamente sobre ambos os temas, independentemente da ausência de risco imediato", "C": "A adolescente deve ser encaminhada automaticamente ao CAPS, suspendendo qualquer abordagem na APS", "D": "A equipe deve recusar-se a discutir saúde sexual, concentrando-se exclusivamente no quadro ansioso"}, "correta": "A", "raciocinio": "O caso integra dois eixos: saúde mental (ansiedade/insônia, sem sinais de risco imediato) e saúde do adolescente (início de vida sexual, com pedido implícito de sigilo). Como não há elementos de risco relevante que justifiquem quebra de sigilo, a conduta correta mantém a confidencialidade, aborda tecnicamente os dois temas com orientação não julgadora, e reforça o vínculo, sem fragmentar o cuidado nem adotar condutas desproporcionais.", "porque_correta": "A conduta correta integra os princípios de manejo de saúde mental na APS (avaliação e acompanhamento do quadro ansioso, sem necessidade de encaminhamento automático) e de atenção à saúde do adolescente (sigilo mantido na ausência de risco relevante, orientação não julgadora sobre saúde sexual, respeito à autonomia progressiva) em um único plano coerente.", "erros": {"B": "Incorreta porque, na ausência de risco relevante que justifique a quebra de sigilo, informar os pais de forma automática contraria o princípio de confidencialidade na consulta do adolescente, que deve ser preservado nesse cenário.", "C": "Incorreta porque o quadro ansioso descrito, sem sinais de risco agudo, é compatível com o manejo dentro da capacidade da APS; encaminhar automaticamente ao CAPS e suspender o acompanhamento na APS não é proporcional à gravidade apresentada.", "D": "Incorreta porque recusar-se a discutir saúde sexual, tema trazido espontaneamente pela adolescente, contraria o princípio de acolhimento integral e orientação não julgadora que deve orientar a consulta, além de desperdiçar uma oportunidade importante de cuidado."}}, {"id": 50, "tema": "Síntese final — raciocínio integral de MFC", "enunciado": "Um paciente idoso, morador de área de alta vulnerabilidade, é atendido por queixa aguda, recebe orientação e prescrição, mas a equipe não define critérios claros de retorno, sinais de alerta a observar, nem forma de reavaliação do resultado do cuidado prestado. À luz do raciocínio de MFC (começar pela pessoa, ler o território, definir o plano e fechar o ciclo), o que está faltando?", "alternativas": {"A": "Nada está faltando, pois o atendimento agudo já foi resolvido com a prescrição", "B": "Falta fechar o ciclo do cuidado: combinar retorno, sinais de alerta, comunicação clara e avaliação dos resultados do cuidado prestado", "C": "Falta apenas repetir a prescrição em uma dose maior", "D": "Falta encaminhar automaticamente a um especialista, independentemente da necessidade"}, "correta": "B", "raciocinio": "O raciocínio de MFC descrito no material de revisão envolve quatro etapas: começar pela pessoa, ler o território, definir o plano e fechar o ciclo. O caso demonstra que as três primeiras etapas foram cumpridas (a queixa foi acolhida e um plano foi definido), mas a última etapa — fechar o ciclo, combinando retorno, sinais de alerta, comunicação e avaliação de resultados — não foi realizada, o que compromete a continuidade e a segurança do cuidado prestado.", "porque_correta": "O fechamento do ciclo de cuidado — combinando critérios claros de retorno, sinais de alerta a observar, comunicação clara com o paciente e uma forma de avaliar os resultados do cuidado prestado — é etapa essencial do raciocínio em MFC, e sua ausência compromete o seguimento adequado do paciente após o atendimento inicial, especialmente em contexto de vulnerabilidade.", "erros": {"A": "Incorreta porque resolver a prescrição da queixa aguda não equivale a completar todo o raciocínio de cuidado em MFC; sem critérios de retorno, sinais de alerta e avaliação de resultados, o ciclo do cuidado permanece incompleto, especialmente relevante em paciente idoso e em território vulnerável.", "C": "Incorreta porque o problema identificado no caso não é a dose da prescrição, mas a ausência de elementos de continuidade do cuidado (retorno, sinais de alerta, comunicação, avaliação de resultados); repetir a prescrição em dose maior não resolve essa lacuna.", "D": "Incorreta porque não há, nos dados do caso, indicação de que a queixa exija necessariamente avaliação especializada; o que falta é justamente estruturar o fechamento do ciclo de cuidado dentro da própria APS, não um encaminhamento automático e desnecessário."}}];
+
+var TOTAL = QUESTIONS.length;
+var STORAGE_KEY = "mfcRevisaoInterativa_v1";
+
+var state = {
+  screen: "start",         // start | quiz | result
+  index: 0,                // current question index (into activeList)
+  answers: {},              // questionId -> { selected, correct }
+  reviewMode: false,
+  reviewList: []            // array of question indices (into QUESTIONS) for wrong-answer review
+};
+
+function saveState() {
+  try {
+    var payload = {
+      index: state.index,
+      answers: state.answers,
+      screen: state.screen,
+      reviewMode: state.reviewMode,
+      reviewList: state.reviewList
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage unavailable — continue without persistence */ }
+}
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.answers) return null;
+    return parsed;
+  } catch (e) { return null; }
+}
+
+function clearState() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+function answeredCount() {
+  return Object.keys(state.answers).length;
+}
+
+function getActiveList() {
+  return state.reviewMode ? state.reviewList : QUESTIONS.map(function (q, i) { return i; });
+}
+
+function currentQuestion() {
+  var list = getActiveList();
+  var qi = list[state.index];
+  return QUESTIONS[qi];
+}
+
+function el(html) {
+  var d = document.createElement("div");
+  d.innerHTML = html.trim();
+  return d.firstChild;
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/* ---------------- START SCREEN ---------------- */
+
+function renderStart() {
+  var saved = loadState();
+  var hasResume = saved && saved.answers && Object.keys(saved.answers).length > 0 && Object.keys(saved.answers).length < TOTAL && !saved.reviewMode;
+
+  var resumeHtml = "";
+  if (hasResume) {
+    var doneCount = Object.keys(saved.answers).length;
+    resumeHtml =
+      '<div class="resume-banner">Você tem uma revisão em andamento — <strong>' + doneCount + '/' + TOTAL + '</strong> questões respondidas.</div>';
+  }
+
+  var actionsHtml = "";
+  if (hasResume) {
+    actionsHtml =
+      '<div class="start-actions">' +
+        '<button class="btn btn-primary" onclick="resumeSession()">Continuar revisão</button>' +
+        '<button class="link-btn" onclick="startFresh()">Começar do zero</button>' +
+      '</div>';
+  } else {
+    actionsHtml =
+      '<div class="start-actions">' +
+        '<button class="btn btn-primary" onclick="startFresh()">Iniciar revisão</button>' +
+      '</div>';
+  }
+
+  var app = document.getElementById("app");
+  app.innerHTML =
+    '<div class="screen start-screen">' +
+      '<div class="start-mark">MFC</div>' +
+      '<h1 class="start-title">Revisão interativa</h1>' +
+      '<p class="start-subtitle">' + TOTAL + ' questões — análise clínica e raciocínio</p>' +
+      '<div class="start-stats">' +
+        '<div class="start-stat"><div class="start-stat-num">' + TOTAL + '</div><div class="start-stat-label">questões inéditas</div></div>' +
+        '<div class="start-stat"><div class="start-stat-num">8</div><div class="start-stat-label">áreas temáticas</div></div>' +
+        '<div class="start-stat"><div class="start-stat-num">A–D</div><div class="start-stat-label">casos clínicos</div></div>' +
+      '</div>' +
+      resumeHtml +
+      actionsHtml +
+    '</div>';
+}
+
+function startFresh() {
+  clearState();
+  state = { screen: "quiz", index: 0, answers: {}, reviewMode: false, reviewList: [] };
+  saveState();
+  render();
+}
+
+function resumeSession() {
+  var saved = loadState();
+  if (!saved) { startFresh(); return; }
+  state.screen = "quiz";
+  state.index = saved.index || 0;
+  state.answers = saved.answers || {};
+  state.reviewMode = false;
+  state.reviewList = [];
+  render();
+}
+
+/* ---------------- QUIZ SCREEN ---------------- */
+
+function renderQuiz() {
+  var list = getActiveList();
+  var q = currentQuestion();
+  var position = state.index + 1;
+  var listTotal = list.length;
+  var percent = state.reviewMode ? Math.round((position / listTotal) * 100) : Math.round((position / TOTAL) * 100);
+  var answer = state.answers[q.id];
+  var answered = !!answer;
+
+  var lettersOrder = ["A", "B", "C", "D"];
+
+  var altsHtml = "";
+  lettersOrder.forEach(function (letter) {
+    var text = q.alternativas[letter];
+    var classes = "alt-row";
+    var mark = "";
+    if (answered) {
+      classes += " locked";
+      if (letter === q.correta) {
+        classes += " correct-row";
+        mark = '<span class="alt-mark">✅</span>';
+      } else if (letter === answer.selected) {
+        classes += " incorrect-row";
+        mark = '<span class="alt-mark">❌</span>';
+      } else {
+        classes += " dim";
+      }
+    }
+    var clickAttr = answered ? "" : ' onclick="selectAnswer(\'' + letter + '\')"';
+    altsHtml +=
+      '<button class="' + classes + '"' + clickAttr + (answered ? " disabled" : "") + '>' +
+        '<span class="alt-badge">' + letter + '</span>' +
+        '<span class="alt-text">' + escapeHtml(text) + '</span>' +
+        mark +
+      '</button>';
+  });
+
+  var feedbackHtml = "";
+  var explainHtml = "";
+  if (answered) {
+    if (answer.correct) {
+      feedbackHtml = '<div class="feedback-banner is-correct">CORRETO ✅</div>';
+    } else {
+      feedbackHtml = '<div class="feedback-banner is-incorrect">INCORRETO ❌</div>';
+    }
+
+    var wrongLettersHtml = "";
+    lettersOrder.filter(function (l) { return l !== q.correta; }).forEach(function (l) {
+      wrongLettersHtml +=
+        '<div class="wrong-alt-item"><span class="wrong-alt-letter">' + l + ')</span>' +
+        '<span class="explain-text" style="display:inline">' + escapeHtml(q.erros[l]) + '</span></div>';
+    });
+
+    explainHtml =
+      '<div class="explain-panel">' +
+        '<div class="explain-block">' +
+          '<div class="explain-label">Gabarito</div>' +
+          '<div class="explain-gabarito">Alternativa ' + q.correta + '</div>' +
+        '</div>' +
+        '<div class="explain-block">' +
+          '<div class="explain-label">Raciocínio</div>' +
+          '<p class="explain-text">' + escapeHtml(q.raciocinio) + '</p>' +
+        '</div>' +
+        '<div class="explain-block">' +
+          '<div class="explain-label">Por que a correta está correta</div>' +
+          '<p class="explain-text">' + escapeHtml(q.porque_correta) + '</p>' +
+        '</div>' +
+        '<div class="explain-block">' +
+          '<div class="explain-label">Por que as demais estão erradas</div>' +
+          wrongLettersHtml +
+        '</div>' +
+      '</div>';
+  }
+
+  var isLastInList = state.index === listTotal - 1;
+  var nextLabel = state.reviewMode
+    ? (isLastInList ? "Voltar ao resultado" : "Próxima")
+    : (isLastInList ? "Ver resultado" : "Próxima");
+
+  var reviewFlagHtml = state.reviewMode ? '<span class="review-flag">Revisão de erros · ' + position + '/' + listTotal + '</span><br>' : "";
+
+  var app = document.getElementById("app");
+  app.innerHTML =
+    '<div class="quiz-header">' +
+      '<div class="quiz-header-row">' +
+        '<span class="quiz-counter">Questão <b>' + position + '</b>/' + (state.reviewMode ? listTotal : TOTAL) + '</span>' +
+        '<span class="quiz-percent">' + percent + '%</span>' +
+      '</div>' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + percent + '%"></div></div>' +
+    '</div>' +
+    '<div class="quiz-body">' +
+      reviewFlagHtml +
+      '<div class="tema-chip">' + escapeHtml(q.tema) + '</div>' +
+      '<p class="enunciado">' + escapeHtml(q.enunciado) + '</p>' +
+      '<div class="alt-list">' + altsHtml + '</div>' +
+      feedbackHtml +
+      explainHtml +
+    '</div>' +
+    '<div class="quiz-nav">' +
+      '<button class="btn btn-ghost" onclick="goPrev()" ' + (state.index === 0 ? "disabled" : "") + '>Anterior</button>' +
+      '<button class="btn btn-primary" onclick="goNext()" ' + (answered ? "" : "disabled") + '>' + nextLabel + '</button>' +
+    '</div>';
+
+  window.scrollTo(0, app.scrollTop = 0);
+  document.documentElement.scrollTop = 0;
+}
+
+function selectAnswer(letter) {
+  var q = currentQuestion();
+  if (state.answers[q.id]) return; // already locked
+  var correct = letter === q.correta;
+  state.answers[q.id] = { selected: letter, correct: correct };
+  saveState();
+  renderQuiz();
+}
+
+function goNext() {
+  var list = getActiveList();
+  var isLast = state.index === list.length - 1;
+  if (isLast) {
+    if (state.reviewMode) {
+      state.screen = "result";
+      state.reviewMode = false;
+    } else {
+      state.screen = "result";
+    }
+    saveState();
+    render();
+    return;
+  }
+  state.index += 1;
+  saveState();
+  render();
+}
+
+function goPrev() {
+  if (state.index === 0) return;
+  state.index -= 1;
+  saveState();
+  render();
+}
+
+/* ---------------- RESULT SCREEN ---------------- */
+
+function computeScore() {
+  var acertos = 0, erros = 0, wrongIdx = [];
+  QUESTIONS.forEach(function (q, i) {
+    var a = state.answers[q.id];
+    if (a) {
+      if (a.correct) acertos++; else { erros++; wrongIdx.push(i); }
+    }
+  });
+  return { acertos: acertos, erros: erros, wrongIdx: wrongIdx };
+}
+
+function classify(percent) {
+  if (percent >= 90) return { label: "Excelente domínio", desc: "Você demonstra domínio consistente dos conceitos e consegue aplicá-los com segurança em situações clínicas variadas." };
+  if (percent >= 75) return { label: "Bom domínio", desc: "Sua base está sólida. Revise os pontos específicos em que errou para fechar as últimas lacunas de raciocínio." };
+  if (percent >= 60) return { label: "Domínio parcial", desc: "Você já reconhece boa parte dos conceitos, mas ainda erra decisões-chave. Vale revisar os temas com mais erros antes da prova." };
+  return { label: "Necessita revisão", desc: "Ainda há lacunas importantes de raciocínio. Reserve um tempo para revisar os temas com calma antes de tentar novamente." };
+}
+
+function renderResult() {
+  var score = computeScore();
+  var percent = Math.round((score.acertos / TOTAL) * 100);
+  var band = classify(percent);
+
+  var app = document.getElementById("app");
+  app.innerHTML =
+    '<div class="screen result-screen">' +
+      '<div class="result-hero">' +
+        '<div class="result-percent">' + percent + '%</div>' +
+        '<div class="result-band">' + band.label + '</div>' +
+        '<p class="result-band-desc">' + band.desc + '</p>' +
+      '</div>' +
+      '<div class="result-track"><div class="result-track-fill" style="width:' + percent + '%"></div></div>' +
+      '<div class="result-stats">' +
+        '<div class="result-stat-card acertos"><div class="result-stat-num">' + score.acertos + '</div><div class="result-stat-label">acertos</div></div>' +
+        '<div class="result-stat-card erros"><div class="result-stat-num">' + score.erros + '</div><div class="result-stat-label">erros</div></div>' +
+      '</div>' +
+      '<div class="result-actions">' +
+        (score.erros > 0 ? '<button class="btn btn-primary" onclick="startReview()">Revisar questões erradas</button>' : '') +
+        '<button class="btn btn-ghost" onclick="startFresh()">Refazer revisão completa</button>' +
+      '</div>' +
+      (score.erros === 0 ? '<p class="review-tema-note">Você acertou todas as questões desta revisão.</p>' : '') +
+    '</div>';
+}
+
+function startReview() {
+  var score = computeScore();
+  if (score.wrongIdx.length === 0) return;
+  state.reviewMode = true;
+  state.reviewList = score.wrongIdx;
+  state.index = 0;
+  state.screen = "quiz";
+  saveState();
+  render();
+}
+
+/* ---------------- ROUTER ---------------- */
+
+function render() {
+  if (state.screen === "start") renderStart();
+  else if (state.screen === "quiz") renderQuiz();
+  else if (state.screen === "result") renderResult();
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
+render();
+</script>
+</body>
+</html>
